@@ -11,7 +11,7 @@ class DefDictToObject():
     def __init__(self, myDict):
         for key, value in myDict.items():
             print(f"{key} : {value}")
-            if isinstance(value) == dict:
+            if type(value) == dict:
                 setattr(self, key, DefDictToObject(value))
             else:
                 setattr(self, key, value)

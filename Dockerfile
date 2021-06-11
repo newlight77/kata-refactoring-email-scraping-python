@@ -26,11 +26,9 @@ RUN pipenv install --system --deploy
 USER pyuser
 
 ENV ENV=${ENV}
-#ENV PATH=/home/pyuser/.local/bin:$PATH
 
 RUN env
 
 EXPOSE 5000
 
-#CMD [ "pipenv", "run", "gunicorn", "--config", "./config/gunicorn.conf.py", "hello:app" ]
 CMD ["gunicorn", "-c", "python:config.gunicorn", "app"]

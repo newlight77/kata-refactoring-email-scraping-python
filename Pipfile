@@ -10,7 +10,6 @@ email-listener = "1.2"
 gunicorn = "*"
 IMAPClient = "*"
 cryptography = "*"
-psycopg2 = "*"
 
 [dev-packages]
 pycodestyle = "*"
@@ -22,6 +21,8 @@ pytest-mock = "*"
 rope = "*"
 autopep8 = "*"
 pytest = "*"
+pytest-cov = "*"
+pytest-xdist = "*"
 
 [requires]
 python_version = "3.9"

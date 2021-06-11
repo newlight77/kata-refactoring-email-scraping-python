@@ -12,22 +12,20 @@ services:
       context: .
       dockerfile: ./Dockerfile
       args:
-        ENV: ${ENV}
+        ENV:  ${ENV}
     container_name: cvbackend
     hostname: cvbackend
     networks:
       internal-subnet:
         ipv4_address: 172.28.5.21
     env_file:
-      - ./config/cv.${ENV}.env
+      - ./config/app.${ENV}.env
     volumes:
-      - ./config/cv.${ENV}.env:/app/config/cv.env:ro
-      - cv_files:/data/files:rw
-      - cv_logs:/data/logs:rw
+      - ./config/app.${ENV}.env:/app/config/app.env:ro
+      - app_files:/data/files:rw
+      - app_logs:/data/logs:rw
     ports:
       - "5000:5000"
-    depends_on:
-      - dbcv
     restart: unless-stopped
 
 networks:
@@ -40,6 +38,6 @@ networks:
         - subnet: 172.28.5.0/24
 
 volumes:  
-  cv_logs:
-  dbcv_data:
-  dbkeycloak_data:
+  app_files:
+  app_logs:
+  
