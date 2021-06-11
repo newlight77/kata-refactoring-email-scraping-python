@@ -1,6 +1,5 @@
-#import path
 import os
-#from pathlib import Path
+
 
 def collect_sources(dirs, extensions, ignore_func):
     for basedir in dirs:

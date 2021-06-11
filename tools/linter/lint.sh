@@ -7,19 +7,22 @@ echo "root dir = $ROOT_DIR"
 echo "****************************************************************"
 echo "executing pycodestyle"
 pycodestyle .
+echo "executing pycodestyle done"
 
 echo "****************************************************************"
 echo "executing pyflakes"
 python ${ROOT_DIR}/run-pyflakes.py
+echo "executing pyflakes done"
 
 echo "****************************************************************"
 echo "executing mccabe"
 python ${ROOT_DIR}/run-mccabe.py 7
+echo "executing mccabe done"
 
-echo "****************************************************************"
-echo "executing pylint"
-pylint api
-pylint config
-pylint domin
-pylint shared/utils
-pylint tools/linter
+# echo "****************************************************************"
+# echo "executing pylint"
+# pylint app --disable=C0114,C0115
+# pylint config --disable=C0114,C0115
+# pylint domin
+# pylint shared/utils
+# pylint tools/linter

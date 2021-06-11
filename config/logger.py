@@ -1,7 +1,6 @@
-import os
 import logging
-import colorlog
 from logging.config import dictConfig
+import colorlog  # NOQA
 
 class InfoFilter(logging.Filter):
     def filter(self, record):
@@ -29,6 +28,8 @@ def configure_logger(config):
 
     # with open("logging.json", "r", encoding="utf-8") as fd:
     #     logging.config.dictConfig(json.load(fd))
+
+    colorlog.LevelFormatter
 
     dictConfig({
         "version": 1,
