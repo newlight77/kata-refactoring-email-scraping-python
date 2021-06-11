@@ -1,0 +1,131 @@
+image: python:3.9
+
+cache:
+  paths:
+    - .pytest_cache/
+    - requirements.txt
+
+before_script:
+  - python --version
+  - pip install -U pytest pipenv gunicorn codecov
+  - pipenv lock -r > requirements.txt
+
+stages:
+  - prepare
+  - test
+  - quality
+  - build image
+  - CD pipeline
+
+pip-install:
+  stage: prepare
+  script: 
+    - python --version
+    - pip install -U pytest pipenv gunicorn codecov
+    - pipenv lock -r > requirements.txt
+  tags:
+    - node
+
+ut:
+  stage: test
+  script: 
+    - pytest -vv -x -s -k unit
+  tags:
+    - node
+
+it:
+  stage: test
+  script: 
+    - pytest -vv -x -s -k integration
+  tags:
+    - node
+
+lint:
+  stage: quality
+  script: 
+    - ./tools/linter/lint.sh
+  tags:
+    - node
+
+codecov:
+  stage: quality
+  script:
+    - pip install --user codecov
+    - codecov -t 15c1b24a-a4ce-44c7-a4a3-22f292a98565
+  dependencies:
+    - ut
+    - it
+  tags:
+    - node
+
+code-analysis:
+  stage: quality
+  image: ciricihq/gitlab-sonar-scanner
+  variables:
+    SONAR_URL: https://ci.tricefal.io/sonar
+    SONAR_ANALYSIS_MODE: publish
+  only:
+    - master
+    - develop
+    - /^[0-9].[0-9].[0-9]$/
+    - /^v[0-9].[0-9].[0-9]$/
+  script:
+    - gitlab-sonar-scanner
+  dependencies:
+    - ut
+    - it
+  when: on_success
+  tags:
+    - node
+
+
+build-image:
+  image: docker:19.03.12
+  stage: build image
+  services:
+    - name: docker:19.03.12-dind
+      command: ["--insecure-registry=registry.gitlab.com"]
+  variables:
+    DOCKER_DRIVER: overlay2
+    VERSION: latest
+    SHORT_VERSION: latest  
+    ENV: local
+    ENABLE_BUILD: 'true'
+    GROUP_REGISTRY: registry.gitlab.com/tricefal/
+    GROUP_REGISTRY_USER: tricefal-read
+    # GROUP_REGISTRY_PASSWORD: on gitlab.com project/settings/cicd/variables
+  before_script:
+    - apk add --no-cache make git
+    - apk add --no-cache docker-compose
+    - docker info
+    - docker-compose --version
+    - VERSION=$(git describe --always) # e.g. v1.0.4-4-g9bd8499
+    - SHORT_VERSION=$(git describe --always | cut -d'-' -f1) # e.g. v1.0.4
+    - echo $VERSION $ENV
+  script:
+    - docker login -u $GROUP_REGISTRY_USER -p $GROUP_REGISTRY_PASSWORD $GROUP_REGISTRY
+    - docker-compose -f ./docker-compose.yml pull app-cv-backend
+    - docker-compose -f ./docker-compose.yml build app-cv-backend
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker-compose -f ./docker-compose.yml push app-cv-backend
+    - VERSION=$(git describe --always | cut -d'-' -f1) # e.g. v1.0.4
+    - docker-compose -f ./docker-compose.yml build app-cv-backend
+    - docker-compose -f ./docker-compose.yml push app-v-backend
+    - VERSION=latest
+    - docker-compose -f ./docker-compose.yml build app-cv-backend
+    - docker-compose -f ./docker-compose.yml push app-cv-backend
+  dependencies:
+    - codecov
+    - code-analysis
+    - it
+  only:
+    - master
+    - develop
+    - /^[0-9].[0-9].[0-9]$/
+    - /^v[0-9].[0-9].[0-9]$/
+  tags:
+    - image
+
+
+after_script:
+  - echo "End CI"

@@ -1,0 +1,28 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+colorlog = "*"
+python-dotenv = "*"
+email-listener = "1.2"
+pytest = "*"
+gunicorn = "*"
+IMAPClient = "*"
+cryptography = "*"
+psycopg2-binary = "*"
+psycopg2 = "*"
+
+[dev-packages]
+pycodestyle = "*"
+pyflakes = "*"
+mccabe = "*"
+pylint = "*"
+configparser = "*"
+pytest-mock = "*"
+rope = "*"
+autopep8 = "*"
+
+[requires]
+python_version = "3.9"

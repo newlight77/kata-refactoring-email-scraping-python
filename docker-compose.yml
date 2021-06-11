@@ -1,0 +1,45 @@
+# VERSION=latest
+# ENV=dev
+# ENABLE_BUILD=false
+
+version: "3.6"
+
+services:
+
+  app-cv-backend:
+    image: registry.gitlab.com/tricefal/app-cv-backend:${VERSION}
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        ENV: ${ENV}
+    container_name: cvbackend
+    hostname: cvbackend
+    networks:
+      internal-subnet:
+        ipv4_address: 172.28.5.21
+    env_file:
+      - ./config/cv.${ENV}.env
+    volumes:
+      - ./config/cv.${ENV}.env:/app/config/cv.env:ro
+      - cv_files:/data/files:rw
+      - cv_logs:/data/logs:rw
+    ports:
+      - "5000:5000"
+    depends_on:
+      - dbcv
+    restart: unless-stopped
+
+networks:
+  internal-subnet:
+    name: internal_subnet
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.5.0/24
+
+volumes:  
+  cv_logs:
+  dbcv_data:
+  dbkeycloak_data:
