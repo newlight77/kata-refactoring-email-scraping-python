@@ -5,43 +5,35 @@ cache:
     - .pytest_cache/
     - requirements.txt
 
-before_script:
-  - python --version
-  - pip install -U pytest pipenv gunicorn codecov
-  - pipenv lock -r > requirements.txt
-
 stages:
-  - prepare
   - test
   - quality
   - build image
   - CD pipeline
 
-pip-install:
-  stage: prepare
-  script: 
-    - python --version
-    - pip install -U pytest pipenv gunicorn codecov
-    - pipenv lock -r > requirements.txt
-  tags:
-    - node
-
 ut:
   stage: test
+  variables:
+    PYTHONPATH: .
+  before_script:
+    - python --version
+    - pip --version
+    - pip install -U pipenv
+    - pipenv lock -r > requirements.txt
+    - pip install -r requirements.txt
   script: 
-    - pytest -vv -x -s -k unit
-  tags:
-    - node
-
-it:
-  stage: test
-  script: 
-    - pytest -vv -x -s -k integration
+    - PYTHONPATH=. pytest ./tests/unit -vv -x -s
   tags:
     - node
 
 lint:
   stage: quality
+  before_script:
+    - python --version
+    - pip --version
+    - pip install -U pipenv
+    - pipenv lock -r --dev > requirements.txt
+    - pip install -r requirements.txt
   script: 
     - ./tools/linter/lint.sh
   tags:
@@ -50,11 +42,10 @@ lint:
 codecov:
   stage: quality
   script:
-    - pip install --user codecov
+    - pip install codecov
     - codecov -t 15c1b24a-a4ce-44c7-a4a3-22f292a98565
   dependencies:
     - ut
-    - it
   tags:
     - node
 
@@ -73,7 +64,6 @@ code-analysis:
     - gitlab-sonar-scanner
   dependencies:
     - ut
-    - it
   when: on_success
   tags:
     - node
@@ -117,7 +107,6 @@ build-image:
   dependencies:
     - codecov
     - code-analysis
-    - it
   only:
     - master
     - develop

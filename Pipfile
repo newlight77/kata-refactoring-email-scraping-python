@@ -7,11 +7,9 @@ name = "pypi"
 colorlog = "*"
 python-dotenv = "*"
 email-listener = "1.2"
-pytest = "*"
 gunicorn = "*"
 IMAPClient = "*"
 cryptography = "*"
-psycopg2-binary = "*"
 psycopg2 = "*"
 
 [dev-packages]
@@ -23,6 +21,7 @@ configparser = "*"
 pytest-mock = "*"
 rope = "*"
 autopep8 = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.9"
