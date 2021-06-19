@@ -26,7 +26,7 @@ def run():
     listen(imap, scraper_config)
 
 
-def connect(config) -> IMAPClient:
+def connect(config):
     imap = IMAPClient(config.host)
     imap.login(config.email, config.password)
     return imap
@@ -54,12 +54,10 @@ def listen(imap, config):
                 imap.idle()  # idling
     except ValueError as ve:
         print(f"error: {ve}")
-    except TypeError as te:
-        print(f"error: {te}")
     except KeyboardInterrupt as ki:
         print(f"error: {ki}")
     finally:
-        print(f"terminating the app")
+        print("terminating the app")
         imap.idle_done()
         imap.logout()
 

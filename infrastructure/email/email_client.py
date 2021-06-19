@@ -12,7 +12,7 @@ class EmailClient:
     def __init__(self, config):
         self.imap = None
         self.config = config
-        
+
     def connect(self):
         self.imap = IMAPClient(self.config.host)
         self.imap.login(self.config.email, self.config.password)

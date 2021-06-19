@@ -54,15 +54,14 @@ def listen(client, config):
                 imap.idle()  # idling
     except ValueError as ve:
         print(f"error: {ve}")
-    except TypeError as te:
-        print(f"error: {te}")
     except KeyboardInterrupt as ki:
         print(f"error: {ki}")
     finally:
-        print(f"terminating the app")
+        print("terminating the app")
         imap.idle_done()
         imap.logout()
 
 
 def scrape(client: EmailClient, config):
-    client.scrape() >> summary_to_json_file(config.attachment_dir)
+    client.scrape() \
+        >> summary_to_json_file(config.attachment_dir)
