@@ -8,7 +8,8 @@ colorlog = "*"
 python-dotenv = "*"
 email-listener = "1.2"
 gunicorn = "*"
-IMAPClient = "*"
+html2text = "*"
+imapclient = "*"
 cryptography = "*"
 
 [dev-packages]
