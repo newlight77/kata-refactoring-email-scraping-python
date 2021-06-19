@@ -5,17 +5,23 @@ from imapclient import IMAPClient
 import json
 import os
 import urllib.parse
-from config import config
-from shared.collections_util import dict_util
 from shared.file_util import file_util
 from shared.decorators.pipe import pipe
 
-class EmailScraper:
-    def __init__(self, server, config):
-        self.server = server
+class EmailClient:
+    def __init__(self, config):
+        self.imap = None
         self.config = config
+        
+    def connect(self):
+        self.imap = IMAPClient(self.config.host)
+        self.imap.login(self.config.email, self.config.password)
+        return self.imap
 
     def scrape(self):
+        if type(self.imap) is not IMAPClient:
+            raise ValueError("client must be of type IMAPClient")
+
         all_emails_summary = {}
         for uid, raw_message, raw_envelop in self.fetch_emails():
             envelop = raw_envelop[b'ENVELOPE']
@@ -30,12 +36,10 @@ class EmailScraper:
         return all_emails_summary
 
     def fetch_emails(self):
-        self.server.select_folder(self.config.folder, readonly=False)
-        if type(self.server) is not IMAPClient:
-            raise ValueError("server must be of type IMAPClient")
-        messages = self.server.search([self.config.search_key_words])
-        envelopes = self.server.fetch(messages, ['ENVELOPE']).items()
-        emails = self.server.fetch(messages, 'RFC822').items()
+        self.imap.select_folder(self.config.folder, readonly=False)
+        messages = self.imap.search([self.config.search_key_words])
+        envelopes = self.imap.fetch(messages, ['ENVELOPE']).items()
+        emails = self.imap.fetch(messages, 'RFC822').items()
         for (uid, raw_message), (uid, raw_envelop) in zip(emails, envelopes):
             yield (uid, raw_message, raw_envelop)
 

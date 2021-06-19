@@ -1,5 +1,4 @@
-from email.header import decode_header
-from infrastructure.email.email_scraper import EmailScraper, summary_to_json_file
+from infrastructure.email.email_client import EmailClient, summary_to_json_file
 from imapclient import IMAPClient
 from config import config
 from shared.collections_util import dict_util
@@ -24,40 +23,46 @@ def run():
 
     scraper_config >> connect() >> listen(scraper_config)
 
+
 @pipe
 def connect(config):
-    server = IMAPClient(config.host)
-    server.login(config.email, config.password)
-    return server
+    client = EmailClient(config)
+    client.connect()
+    return client
 
 
 @pipe
-def listen(server, config):
-    
-    if type(server) is not IMAPClient:
-        raise ValueError("server must be of type IMAPClient")
+def listen(client, config):
+    imap = client.imap
 
-    server.idle()
+    if type(imap) is not IMAPClient:
+        raise ValueError("client must be of type IMAPClient")
+
+    imap.idle()
     print("Connection is now in IDLE mode.")
 
     try:
         while (True):
-            responses = server.idle_check(config.timeout)
-            print("Server sent:", responses if responses else "nothing")
+            responses = imap.idle_check(config.timeout)
+            print("Email client sent:", responses if responses else "nothing")
 
             if (responses):
-                server.idle_done()  # Suspend the idling
+                imap.idle_done()  # Suspend the idling
 
-                scrape(server, config)
+                scrape(client, config)
 
-                server.idle()  # idling
-    except KeyboardInterrupt:
-        print("treminating the app")
+                imap.idle()  # idling
+    except ValueError as ve:
+        print(f"error: {ve}")
+    except TypeError as te:
+        print(f"error: {te}")
+    except KeyboardInterrupt as ki:
+        print(f"error: {ki}")
     finally:
-        server.idle_done()
-        server.logout()
+        print(f"terminating the app")
+        imap.idle_done()
+        imap.logout()
 
 
-def scrape(server, config):
-    scraper = EmailScraper(server, config)
-    scraper.scrape() >> summary_to_json_file(config.attachment_dir)
+def scrape(client: EmailClient, config):
+    client.scrape() >> summary_to_json_file(config.attachment_dir)
