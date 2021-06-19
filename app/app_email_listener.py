@@ -1,8 +1,3 @@
-"""[summary]
-Email scraper based on Email-listeneer aiming to connect to
-an email account, read emails and save attachments into a directory
-"""
-
 import email
 from email.header import decode_header
 import html2text
@@ -15,10 +10,6 @@ from shared.collections_util import dict_util
 from shared.file_util import file_util
 
 def run():
-    """
-    Running the Email scraper based on Email-listeneer
-    """
-
     # pylint: disable=no-member
     scraper_config = dict_util.DefDictToObject({
         'host': config.EMAIL_HOST,
@@ -31,46 +22,54 @@ def run():
         'search_key_words': config.EMAIL_SEARCH_KEYWORDS.split(',')
     })
 
-    server = connect(scraper_config)
-    listen(server, scraper_config)
+    imap = connect(scraper_config)
+    listen(imap, scraper_config)
 
 
-def connect(config):
-    server = IMAPClient(config.host)
-    server.login(config.email, config.password)
-    return server
+def connect(config) -> IMAPClient:
+    imap = IMAPClient(config.host)
+    imap.login(config.email, config.password)
+    return imap
 
 
-def listen(server, config):
+def listen(imap, config):
 
-    if type(server) is not IMAPClient:
-        raise ValueError("server must be of type IMAPClient")
+    if type(imap) is not IMAPClient:
+        raise ValueError("imap must be of type IMAPClient")
 
-    server.idle()
+    imap.idle()
     print("Connection is now in IDLE mode.")
 
     try:
         while (True):
-            responses = server.idle_check(config.timeout)
-            print("Server sent:", responses if responses else "nothing")
+            responses = imap.idle_check(config.timeout)
+            print("imap sent:", responses if responses else "nothing")
 
             if (responses):
-                server.idle_done()  # Suspend the idling
+                imap.idle_done()  # Suspend the idling
 
-                summary = scrape(server, config)
+                summary = scrape(imap, config)
                 summary_to_json_file(summary, config.attachment_dir)
 
-                server.idle()  # idling
-    except KeyboardInterrupt:
-        print("treminating the app")
+                imap.idle()  # idling
+    except ValueError as ve:
+        print(f"error: {ve}")
+    except TypeError as te:
+        print(f"error: {te}")
+    except KeyboardInterrupt as ki:
+        print(f"error: {ki}")
     finally:
-        server.idle_done()
-        server.logout()
+        print(f"terminating the app")
+        imap.idle_done()
+        imap.logout()
 
 
-def scrape(server, config):
+def scrape(imap, config) -> dict:
+    if type(imap) is not IMAPClient:
+        raise ValueError("imap must be of type IMAPClient")
+
     all_emails_summary = {}
-    for uid, raw_message, raw_envelop in fetch_emails(server, config):
+    for uid, raw_message, raw_envelop in fetch_emails(imap, config):
         envelop = raw_envelop[b'ENVELOPE']
         date = envelop.date.strftime('%Y%m%d_%H%M')
 
@@ -82,24 +81,16 @@ def scrape(server, config):
     return all_emails_summary
 
 
-def fetch_emails(server, config):
-    server.select_folder(config.folder, readonly=False)
-    if type(server) is not IMAPClient:
-        raise ValueError("server must be of type IMAPClient")
-    messages = server.search([config.search_key_words])
-    envelopes = server.fetch(messages, ['ENVELOPE']).items()
-    emails = server.fetch(messages, 'RFC822').items()
+def fetch_emails(imap, config):
+    imap.select_folder(config.folder, readonly=False)
+    messages = imap.search([config.search_key_words])
+    envelopes = imap.fetch(messages, ['ENVELOPE']).items()
+    emails = imap.fetch(messages, 'RFC822').items()
     for (uid, raw_message), (uid, raw_envelop) in zip(emails, envelopes):
         yield (uid, raw_message, raw_envelop)
 
 
-def parse_message(message, attachment_dir):
-    if message.is_multipart():
-        return parse_multipart_message(message, attachment_dir)
-    return parse_single_part(message)
-
-
-def get_from(email_message):
+def get_from(email_message) -> str:
     from_raw = email_message.get_all('From', [])
     from_list = email.utils.getaddresses(from_raw)
 
@@ -112,7 +103,7 @@ def get_from(email_message):
     return "UnknownEmail"
 
 
-def get_subject(email_message):
+def get_subject(email_message) -> str:
     subject = email_message.get("Subject")
     if subject is None:
         return "No Subject"
@@ -121,7 +112,13 @@ def get_subject(email_message):
     return subject.strip()
 
 
-def parse_single_part(raw_message):
+def parse_message(message, attachment_dir) -> dict:
+    if message.is_multipart():
+        return parse_multipart_message(message, attachment_dir)
+    return parse_single_part(message)
+
+
+def parse_single_part(raw_message) -> dict:
     email_data = {}
     if raw_message.get_content_type() == 'text/html':
         email_data["Plain_HTML"] = html2text.html2text(raw_message.get_payload())
@@ -133,7 +130,7 @@ def parse_single_part(raw_message):
     return email_data
 
 
-def parse_multipart_message(email_message, attachment_dir):
+def parse_multipart_message(email_message, attachment_dir) -> dict:
     email_data = {}
     attachments = []
     for part in email_message.walk():
@@ -147,7 +144,7 @@ def parse_multipart_message(email_message, attachment_dir):
     return email_data
 
 
-def save_attachment(part, dest_dir):
+def save_attachment(part, dest_dir) -> str:
     if bool(part.get_filename()):
         file_path = os.path.join(dest_dir, part.get_filename())
         file_path = urllib.parse.unquote(file_path)
@@ -158,7 +155,7 @@ def save_attachment(part, dest_dir):
     return str(file_path)
 
 
-def summary_to_json_file(summary, dest_dir):
+def summary_to_json_file(summary, dest_dir) -> list:
     file_list = []
     for key in summary.keys():
         try:
