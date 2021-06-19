@@ -146,3 +146,6 @@ cython_debug/
 # upload/
 # information/
 data/
+
+cv/
+config/crypto_secret.key
