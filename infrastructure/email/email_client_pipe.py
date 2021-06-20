@@ -29,7 +29,7 @@ class EmailClientPipe:
     def fetch_emails(self):
         print(f"fetch emails with imap={self.imap}")
         self.imap.select_folder(self.config.folder, readonly=False)
-        messages = self.imap.search([self.config.search_key_words])
+        messages = self.imap.search(self.config.search_key_words)
         raw_envelopes = self.imap.fetch(messages, ['ENVELOPE']).items()
         raw_emails = self.imap.fetch(messages, 'RFC822').items()
 

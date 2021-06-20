@@ -148,4 +148,4 @@ cython_debug/
 data/
 
 cv/
-config/crypto_secret.key
+config/crypto_secret*.key

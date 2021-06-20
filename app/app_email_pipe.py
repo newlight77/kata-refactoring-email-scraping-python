@@ -12,7 +12,7 @@ def run():
         'password': config.EMAIL_PASSWORD,
         'folder': config.FOLDER,
         'attachment_dir': config.ATTACHMENTS_DIR,
-        'timeout': 5,
+        'timeout': 30,
         'read_post_action': config.EMAIL_READ_POST_ACTION,
         'search_key_words': config.EMAIL_SEARCH_KEYWORDS.split(',')
     })
@@ -28,6 +28,8 @@ def listen(client: EmailClientPipe, config):
 
     if type(imap) is not IMAPClient:
         raise ValueError("client must be of type IMAPClient")
+    
+    client.scrape()
 
     imap.idle()
     print("Connection is now in IDLE mode.")
