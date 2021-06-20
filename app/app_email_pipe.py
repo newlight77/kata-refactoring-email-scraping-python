@@ -1,14 +1,10 @@
-from infrastructure.email.email_client import EmailClient, summary_to_json_file
+from infrastructure.email.email_client_pipe import EmailClientPipe, summary_to_json_file
 from imapclient import IMAPClient
 from config import config
 from shared.collections_util import dict_util
 from shared.decorators.pipe import pipe
 
 def run():
-    """
-    Running the Email scraper based on Email-listeneer
-    """
-
     # pylint: disable=no-member
     scraper_config = dict_util.DefDictToObject({
         'host': config.EMAIL_HOST,
@@ -16,7 +12,7 @@ def run():
         'password': config.EMAIL_PASSWORD,
         'folder': config.FOLDER,
         'attachment_dir': config.ATTACHMENTS_DIR,
-        'timeout': 30,
+        'timeout': 5,
         'read_post_action': config.EMAIL_READ_POST_ACTION,
         'search_key_words': config.EMAIL_SEARCH_KEYWORDS.split(',')
     })
@@ -26,7 +22,7 @@ def run():
 
 @pipe
 def connect(config):
-    client = EmailClient(config)
+    client = EmailClientPipe(config)
     client.connect()
     return client
 
@@ -62,6 +58,5 @@ def listen(client, config):
         imap.logout()
 
 
-def scrape(client: EmailClient, config):
-    client.scrape() \
-        >> summary_to_json_file(config.attachment_dir)
+def scrape(client: EmailClientPipe, config):
+    client >> client.scrape() #>> summary_to_json_file(config.attachment_dir)

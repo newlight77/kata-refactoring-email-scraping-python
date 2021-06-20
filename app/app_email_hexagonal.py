@@ -13,7 +13,7 @@ def run():
         'password': config.EMAIL_PASSWORD,
         'folder': config.FOLDER,
         'attachment_dir': config.ATTACHMENTS_DIR,
-        'timeout': 60,
+        'timeout': 15,
         'read_post_action': config.EMAIL_READ_POST_ACTION,
         'search_key_words': config.EMAIL_SEARCH_KEYWORDS.split(',')
     })

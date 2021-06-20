@@ -17,7 +17,7 @@ def run():
         'password': config.EMAIL_PASSWORD,
         'folder': config.FOLDER,
         'attachment_dir': config.ATTACHMENTS_DIR,
-        'timeout': 30,
+        'timeout': 15,
         'read_post_action': config.EMAIL_READ_POST_ACTION,
         'search_key_words': config.EMAIL_SEARCH_KEYWORDS.split(',')
     })
@@ -66,26 +66,51 @@ def scrape(imap, config) -> dict:
     if type(imap) is not IMAPClient:
         raise ValueError("imap must be of type IMAPClient")
 
-    all_emails_summary = {}
-    for uid, raw_message, raw_envelop in fetch_emails(imap, config):
+    emails_summary = {}
+    
+    imap.select_folder(config.folder, readonly=False)
+    messages = imap.search([config.search_key_words])
+    raw_envelopes = imap.fetch(messages, ['ENVELOPE']).items()
+    raw_emails = imap.fetch(messages, 'RFC822').items()
+    for (uid, raw_message), (uid, raw_envelop) in zip(raw_emails, raw_envelopes):
         envelop = raw_envelop[b'ENVELOPE']
         date = envelop.date.strftime('%Y%m%d_%H%M')
 
         message = email.message_from_bytes(raw_message[b'RFC822'])
         email_from = get_from(message)
         email_subject = get_subject(message).strip()
-        print(f"processing: email UID={uid} from {email_from} @ {envelop.date} -> {email_subject}")
-        all_emails_summary[f'{email_from}-{date}-{uid}'] = parse_message(message, config.attachment_dir)
-    return all_emails_summary
+        print(f"processing: email UID={uid} from {email_from} @ {date} -> {email_subject}")
 
+        email_body = {}
+        email_attachments = []
+        if message.is_multipart():
+            for part in message.walk():
+                if part.get_content_type() == 'text/html':
+                    email_body["Plain_HTML"] = html2text.html2text(part.get_payload())
+                    email_body["HTML"] = part.get_payload()
 
-def fetch_emails(imap, config):
-    imap.select_folder(config.folder, readonly=False)
-    messages = imap.search([config.search_key_words])
-    envelopes = imap.fetch(messages, ['ENVELOPE']).items()
-    emails = imap.fetch(messages, 'RFC822').items()
-    for (uid, raw_message), (uid, raw_envelop) in zip(emails, envelopes):
-        yield (uid, raw_message, raw_envelop)
+                if part.get_content_type() == 'text/plain':
+                    email_body["Plain_Text"] = part.get_payload()
+                    
+                if bool(part.get_filename()):
+                    file_path = save_attachment(part, config.attachment_dir)
+                    email_attachments.append(file_path)
+        else:
+            if message.get_content_type() == 'text/html':
+                email_body["Plain_HTML"] = html2text.html2text(message.get_payload())
+                email_body["HTML"] = message.get_payload()
+
+            if message.get_content_type() == 'text/plain':
+                email_body["Plain_Text"] = message.get_payload()
+
+        emails_summary[uid] = {
+            'uid': uid,
+            'from': email_from,
+            'subject': email_subject,
+            # 'body': email_body,
+            'attachments': email_attachments
+        }
+    return emails_summary
 
 
 def get_from(email_message) -> str:
@@ -107,39 +132,7 @@ def get_subject(email_message) -> str:
         return "No Subject"
 
     subject, encoding = decode_header(str(subject))[0]
-    return subject.strip()
-
-
-def parse_message(message, attachment_dir) -> dict:
-    if message.is_multipart():
-        return parse_multipart_message(message, attachment_dir)
-    return parse_single_part(message)
-
-
-def parse_single_part(raw_message) -> dict:
-    email_data = {}
-    if raw_message.get_content_type() == 'text/html':
-        email_data["Plain_HTML"] = html2text.html2text(raw_message.get_payload())
-        email_data["HTML"] = raw_message.get_payload()
-
-    if raw_message.get_content_type() == 'text/plain':
-        email_data["Plain_Text"] = raw_message.get_payload()
-
-    return email_data
-
-
-def parse_multipart_message(email_message, attachment_dir) -> dict:
-    email_data = {}
-    attachments = []
-    for part in email_message.walk():
-        if bool(part.get_filename()):
-            file_path = save_attachment(part, attachment_dir)
-            attachments.append(file_path)
-
-        email_data = parse_single_part(part)
-
-    email_data['attachments'] = attachments
-    return email_data
+    return str(subject).strip()
 
 
 def save_attachment(part, dest_dir) -> str:
@@ -155,10 +148,12 @@ def save_attachment(part, dest_dir) -> str:
 
 def summary_to_json_file(summary, dest_dir) -> list:
     file_list = []
+    print(f'summary={summary}')
     for key in summary.keys():
         try:
             json_obj = json.dumps(summary[key], indent=4)
-            file_path = file_util.write_to_file(json_obj, f"{key}.json", dest_dir)
+            filename = f"{key}.json"
+            file_path = file_util.write_to_file(json_obj, filename, dest_dir)
             file_list.append(file_path)
         except ValueError:
             continue
