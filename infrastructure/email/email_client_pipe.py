@@ -6,7 +6,7 @@ import json
 import os
 import urllib.parse
 from shared.file_util import file_util
-from shared.decorators.pipe import pipe
+from shared.decorators.pipe import pipe, Pipe
 
 class EmailClientPipe:
     def __init__(self, config):
@@ -16,93 +16,118 @@ class EmailClientPipe:
     def connect(self):
         self.imap = IMAPClient(self.config.host)
         self.imap.login(self.config.email, self.config.password)
-        return self.imap
-    
-    @pipe
-    def scrape(self):
-        print(f'scraping by {self}')
-        return self >> self.fetch_emails() \
-            >> self.parse_emails() #\
-            # >> self.parse_mail_body() \
-            #>> self.parse_email_attachments()
+        return self
 
-    @pipe
+    def scrape(self):
+        print(f'scraping by {self} with imap={self.imap}')
+        self.fetch_emails() \
+            | parse_emails() \
+            | parse_emails_body() \
+            | parse_email_attachments(self.config) \
+            #| summary_to_json_file(self.config.attachment_dir)
+
     def fetch_emails(self):
-        print(f'fetch emails by {self}')
+        print(f"fetch emails with imap={self.imap}")
         self.imap.select_folder(self.config.folder, readonly=False)
         messages = self.imap.search([self.config.search_key_words])
         raw_envelopes = self.imap.fetch(messages, ['ENVELOPE']).items()
         raw_emails = self.imap.fetch(messages, 'RFC822').items()
-        return self, raw_emails, raw_envelopes
 
-    @pipe
-    def parse_emails(self, raw_emails, raw_envelopes):
-        print(f'parse emails by {self}')
-        emails_summary = {}
+        raw_emails_with_envelopes = []
         for (uid, raw_message), (uid, raw_envelop) in zip(raw_emails, raw_envelopes):
-            envelop = raw_envelop[b'ENVELOPE']
-            date = envelop.date.strftime('%Y%m%d_%H%M')
+            print(f"fetch emails: yield UID={uid}")
+            raw_emails_with_envelopes.append((uid, raw_message, raw_envelop))
+        return raw_emails_with_envelopes
 
-            message = email.message_from_bytes(raw_message[b'RFC822'])
-            email_from = get_from(message)
-            email_subject = get_subject(message).strip()
-            print(f"processing: email UID={uid} from {email_from} @ {date} -> {email_subject}")
+@Pipe
+def parse_emails(raw_emails_with_envelopes):
+    print(f"parse emails with raw_emails_with_envelopes")
+    messages = []
+    for (uid, raw_message, raw_envelop) in raw_emails_with_envelopes:
+        envelop = raw_envelop[b'ENVELOPE']
+        date = envelop.date.strftime('%Y%m%d_%H%M')
 
-            emails_summary[uid] = {
-                'uid': uid,
-                'from': email_from,
-                'subject': email_subject,
-                'date': date
-            }
-            
-        return self, raw_emails, emails_summary
+        message = email.message_from_bytes(raw_message[b'RFC822'])
+        email_from = get_from(message)
+        email_subject = get_subject(message).strip()
+        print(f"processing: email UID={uid} from {email_from} @ {date} -> {email_subject}")
 
-    @pipe
-    def parse_emails_body(self, raw_emails, emails_summary):
-        emails_summary = emails_summary or {}
-        for (uid, raw_message) in raw_emails:
+        message_metadata = {
+            'uid': uid,
+            'from': email_from,
+            'subject': email_subject,
+            'date': date
+        }
 
-            message = email.message_from_bytes(raw_message[b'RFC822'])
-            print(f"parsing email body for UID={uid}")
-            
-            email_body = {}
-            if message.is_multipart():
-                for part in message.walk():
-                    if part.get_content_type() == 'text/html':
-                        email_body["Plain_HTML"] = html2text.html2text(part.get_payload())
-                        email_body["HTML"] = part.get_payload()
+        messages.append((uid, message_metadata, message))
+    return messages
 
-                    if part.get_content_type() == 'text/plain':
-                        email_body["Plain_Text"] = part.get_payload()
-            else:
-                if raw_message.get_content_type() == 'text/html':
-                    email_body["Plain_HTML"] = html2text.html2text(raw_message.get_payload())
+@Pipe
+def parse_emails_body(parsed_messages):
+    print(f"parse emails body with parsed_messages")
+    messages = []
+    for (uid, message_metadata, message) in parsed_messages:
+
+        print(f"parsing email body for UID={uid}")
+
+        email_body = {}
+        if message.is_multipart():
+            for part in message.walk():
+                if part.get_content_type() == 'text/html':
+                    email_body["Plain_HTML"] = html2text.html2text(part.get_payload())
                     email_body["HTML"] = part.get_payload()
 
-                if raw_message.get_content_type() == 'text/plain':
-                    email_body["Plain_Text"] = raw_message.get_payload()
+                if part.get_content_type() == 'text/plain':
+                    email_body["Plain_Text"] = part.get_payload()
+        else:
+            if message.get_content_type() == 'text/html':
+                email_body["Plain_HTML"] = html2text.html2text(message.get_payload())
+                email_body["HTML"] = part.get_payload()
 
-            emails_summary[uid].body = email_body
-            
-        return self, emails_summary
+            if message.get_content_type() == 'text/plain':
+                email_body["Plain_Text"] = message.get_payload()
 
-    @pipe
-    def parse_email_attachments(self, raw_emails, emails_summary):
-        emails_summary = emails_summary or {}
-        for (uid, raw_message) in raw_emails:
-            message = email.message_from_bytes(raw_message[b'RFC822'])
-            print(f"parsing email attachments for UID={uid}")
-            
-            email_attachments = []
-            if message.is_multipart():
-                for part in message.walk():
-                    if bool(part.get_filename()):
-                        file_path = save_attachment(part, self.config.attachment_dir)
-                        email_attachments.append(file_path)
+        message_metadata['body'] = email_body
 
-            emails_summary[uid].attachments = email_attachments
+        #yield (uid, message_metadata, message)
+        messages.append((uid, message_metadata, message))
+    return messages
 
-        return emails_summary
+@Pipe
+def parse_email_attachments(parsed_messages, config):
+    print(f"parse emails attachments with parsed_messages")
+    metadatas = []
+    for (uid, message_metadata, message) in parsed_messages:
+        print(f"parsing email attachments for UID={uid}")
+
+        email_attachments = []
+        if message.is_multipart():
+            for part in message.walk():
+                if bool(part.get_filename()):
+                    file_path = save_attachment(part, config.attachment_dir)
+                    email_attachments.append(file_path)
+
+        message_metadata['attachments'] = email_attachments
+
+        #yield message_metadata
+        metadatas.append(metadatas)
+    return metadatas
+
+@Pipe
+def summary_to_json_file(message_metadatas, dest_dir):
+    print(f"write summary to json file with metadatas")
+    file_list = []
+    for message_metadata in message_metadatas:
+        try:
+            json_obj = json.dumps(message_metadata, indent=4)
+            filename = f"{message_metadata['from']}-{message_metadata['date']}-{message_metadata['uid']}.json"
+            file_path = file_util.write_to_file(json_obj, filename, dest_dir)
+            file_list.append(file_path)
+        except ValueError:
+            print(f"an error occured while dumping metadata into json for message uid={message_metadata['uid']}")
+            continue
+
+    return file_list
 
 
 def get_from(email_message):
@@ -136,19 +161,3 @@ def save_attachment(part, dest_dir):
             file.write(part.get_payload(decode=True))
 
     return str(file_path)
-
-
-@pipe
-def summary_to_json_file(summary, dest_dir):
-    file_list = []
-    print(f'summary={summary}')
-    for key in summary.keys():
-        try:
-            json_obj = json.dumps([key], indent=4)
-            filename = f"{key}.json"
-            file_path = file_util.write_to_file(json_obj, filename, dest_dir)
-            file_list.append(file_path)
-        except ValueError:
-            continue
-
-    return file_list

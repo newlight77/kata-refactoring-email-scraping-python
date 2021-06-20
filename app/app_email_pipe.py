@@ -17,18 +17,12 @@ def run():
         'search_key_words': config.EMAIL_SEARCH_KEYWORDS.split(',')
     })
 
-    scraper_config >> connect() >> listen(scraper_config)
+    client = EmailClientPipe(scraper_config)
+    client.connect() >> listen(scraper_config)
 
 
 @pipe
-def connect(config):
-    client = EmailClientPipe(config)
-    client.connect()
-    return client
-
-
-@pipe
-def listen(client, config):
+def listen(client: EmailClientPipe, config):
     imap = client.imap
 
     if type(imap) is not IMAPClient:
@@ -45,7 +39,7 @@ def listen(client, config):
             if (responses):
                 imap.idle_done()  # Suspend the idling
 
-                scrape(client, config)
+                client.scrape()
 
                 imap.idle()  # idling
     except ValueError as ve:
@@ -56,7 +50,3 @@ def listen(client, config):
         print("terminating the app")
         imap.idle_done()
         imap.logout()
-
-
-def scrape(client: EmailClientPipe, config):
-    client >> client.scrape() #>> summary_to_json_file(config.attachment_dir)
