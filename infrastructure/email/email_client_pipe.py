@@ -6,7 +6,7 @@ import json
 import os
 import urllib.parse
 from shared.file_util import file_util
-from shared.decorators.pipe import pipe, Pipe
+from shared.decorators.pipe import Pipe
 
 class EmailClientPipe:
     def __init__(self, config):
@@ -23,8 +23,8 @@ class EmailClientPipe:
         self.fetch_emails() \
             | parse_emails() \
             | parse_emails_body() \
-            | parse_email_attachments(self.config) \
-            #| summary_to_json_file(self.config.attachment_dir)
+            | parse_email_attachments(self.config.attachment_dir) \
+            | summary_to_json_file(self.config.attachment_dir)
 
     def fetch_emails(self):
         print(f"fetch emails with imap={self.imap}")
@@ -52,21 +52,21 @@ def parse_emails(raw_emails_with_envelopes):
         email_subject = get_subject(message).strip()
         print(f"processing: email UID={uid} from {email_from} @ {date} -> {email_subject}")
 
-        message_metadata = {
+        metadata = {
             'uid': uid,
             'from': email_from,
             'subject': email_subject,
             'date': date
         }
 
-        messages.append((uid, message_metadata, message))
+        messages.append((uid, metadata, message))
     return messages
 
 @Pipe
 def parse_emails_body(parsed_messages):
     print(f"parse emails body with parsed_messages")
     messages = []
-    for (uid, message_metadata, message) in parsed_messages:
+    for (uid, metadata, message) in parsed_messages:
 
         print(f"parsing email body for UID={uid}")
 
@@ -87,44 +87,43 @@ def parse_emails_body(parsed_messages):
             if message.get_content_type() == 'text/plain':
                 email_body["Plain_Text"] = message.get_payload()
 
-        message_metadata['body'] = email_body
+        metadata['body'] = email_body
 
-        #yield (uid, message_metadata, message)
-        messages.append((uid, message_metadata, message))
+        messages.append((uid, metadata, message))
     return messages
 
 @Pipe
-def parse_email_attachments(parsed_messages, config):
+def parse_email_attachments(parsed_messages, attachment_dir):
     print(f"parse emails attachments with parsed_messages")
-    metadatas = []
-    for (uid, message_metadata, message) in parsed_messages:
+    messages = []
+    for (uid, metadata, message) in parsed_messages:
         print(f"parsing email attachments for UID={uid}")
 
         email_attachments = []
         if message.is_multipart():
             for part in message.walk():
                 if bool(part.get_filename()):
-                    file_path = save_attachment(part, config.attachment_dir)
+                    file_path = save_attachment(part, attachment_dir)
                     email_attachments.append(file_path)
 
-        message_metadata['attachments'] = email_attachments
+        metadata['attachments'] = email_attachments
 
-        #yield message_metadata
-        metadatas.append(metadatas)
-    return metadatas
+        messages.append((uid, metadata, message))
+    return messages
 
 @Pipe
-def summary_to_json_file(message_metadatas, dest_dir):
+def summary_to_json_file(parsed_messages, dest_dir):
     print(f"write summary to json file with metadatas")
     file_list = []
-    for message_metadata in message_metadatas:
+    for (uid, metadata, message) in parsed_messages:
         try:
-            json_obj = json.dumps(message_metadata, indent=4)
-            filename = f"{message_metadata['from']}-{message_metadata['date']}-{message_metadata['uid']}.json"
+            print(f"json from with metadata={metadata['uid']}")
+            json_obj = json.dumps(metadata, indent=4)
+            filename = f"{metadata['from']}-{metadata['date']}-{metadata['uid']}.json"
             file_path = file_util.write_to_file(json_obj, filename, dest_dir)
             file_list.append(file_path)
         except ValueError:
-            print(f"an error occured while dumping metadata into json for message uid={message_metadata['uid']}")
+            print(f"an error occured while dumping metadata into json for message uid={metadata['uid']}")
             continue
 
     return file_list

@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 colorlog = "*"
 python-dotenv = "*"
-email-listener = "1.2"
+pipe = "*"
 gunicorn = "*"
 html2text = "*"
 imapclient = "*"

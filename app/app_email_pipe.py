@@ -2,7 +2,7 @@ from infrastructure.email.email_client_pipe import EmailClientPipe, summary_to_j
 from imapclient import IMAPClient
 from config import config
 from shared.collections_util import dict_util
-from shared.decorators.pipe import pipe
+from shared.decorators.pipe import Pipe
 
 def run():
     # pylint: disable=no-member
@@ -18,10 +18,11 @@ def run():
     })
 
     client = EmailClientPipe(scraper_config)
-    client.connect() >> listen(scraper_config)
+    client.connect() \
+        | listen(scraper_config)
 
 
-@pipe
+@Pipe
 def listen(client: EmailClientPipe, config):
     imap = client.imap
 
