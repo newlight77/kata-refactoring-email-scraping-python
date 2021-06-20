@@ -24,7 +24,7 @@ def test_should_pipe_functions_using_rrshift():
 
 
 def test_should_pipe_functions_using_ror():
-    
+
     # Arrange
     @Pipe
     def select(data1, arg):

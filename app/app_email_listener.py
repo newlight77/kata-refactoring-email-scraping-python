@@ -67,7 +67,7 @@ def scrape(imap, config) -> dict:
         raise ValueError("imap must be of type IMAPClient")
 
     emails_summary = {}
-    
+
     imap.select_folder(config.folder, readonly=False)
     messages = imap.search([config.search_key_words])
     raw_envelopes = imap.fetch(messages, ['ENVELOPE']).items()
@@ -91,7 +91,7 @@ def scrape(imap, config) -> dict:
 
                 if part.get_content_type() == 'text/plain':
                     email_body["Plain_Text"] = part.get_payload()
-                    
+
                 if bool(part.get_filename()):
                     file_path = save_attachment(part, config.attachment_dir)
                     email_attachments.append(file_path)

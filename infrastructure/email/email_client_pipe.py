@@ -41,7 +41,7 @@ class EmailClientPipe:
 
 @Pipe
 def parse_emails(raw_emails_with_envelopes):
-    print(f"parse emails with raw_emails_with_envelopes")
+    print("parse emails with raw_emails_with_envelopes")
     messages = []
     for (uid, raw_message, raw_envelop) in raw_emails_with_envelopes:
         envelop = raw_envelop[b'ENVELOPE']
@@ -64,7 +64,7 @@ def parse_emails(raw_emails_with_envelopes):
 
 @Pipe
 def parse_emails_body(parsed_messages):
-    print(f"parse emails body with parsed_messages")
+    print("parse emails body with parsed_messages")
     messages = []
     for (uid, metadata, message) in parsed_messages:
 
@@ -94,7 +94,7 @@ def parse_emails_body(parsed_messages):
 
 @Pipe
 def parse_email_attachments(parsed_messages, attachment_dir):
-    print(f"parse emails attachments with parsed_messages")
+    print("parse emails attachments with parsed_messages")
     messages = []
     for (uid, metadata, message) in parsed_messages:
         print(f"parsing email attachments for UID={uid}")
@@ -113,7 +113,7 @@ def parse_email_attachments(parsed_messages, attachment_dir):
 
 @Pipe
 def summary_to_json_file(parsed_messages, dest_dir):
-    print(f"write summary to json file with metadatas")
+    print("write summary to json file with metadatas")
     file_list = []
     for (uid, metadata, message) in parsed_messages:
         try:

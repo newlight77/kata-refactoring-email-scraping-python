@@ -16,7 +16,7 @@ echo "executing pyflakes done"
 
 echo "****************************************************************"
 echo "executing mccabe"
-python ${ROOT_DIR}/run-mccabe.py 7
+python ${ROOT_DIR}/run-mccabe.py
 echo "executing mccabe done"
 
 # echo "****************************************************************"

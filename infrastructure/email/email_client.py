@@ -34,7 +34,7 @@ class EmailClient:
             email_from = get_from(message)
             email_subject = get_subject(message).strip()
             print(f"processing: email UID={uid} from {email_from} @ {date} -> {email_subject}")
-            
+
             email_body = {}
             email_attachments = []
             if message.is_multipart():
@@ -45,7 +45,7 @@ class EmailClient:
 
                     if part.get_content_type() == 'text/plain':
                         email_body["Plain_Text"] = part.get_payload()
-                        
+
                     if bool(part.get_filename()):
                         file_path = save_attachment(part, self.config.attachment_dir)
                         email_attachments.append(file_path)
@@ -64,7 +64,7 @@ class EmailClient:
                 # 'body': email_body,
                 'attachments': email_attachments
             }
-        
+
         return emails_summary
 
 

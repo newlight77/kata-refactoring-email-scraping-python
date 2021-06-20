@@ -27,7 +27,7 @@ def process(py_source, max_complexity):
 
 
 def main():
-    max_complexity = int(sys.argv[1])
+    max_complexity = int(configParser.get('mccabe', 'max-complexity'))
     paths = configParser.get('mccabe', 'paths').split(",")
     ok = True
     for py_source in collect_sources(dirs=paths, extensions=".py", ignore_func=ignore):

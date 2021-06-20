@@ -1,4 +1,4 @@
-from infrastructure.email.email_client_pipe import EmailClientPipe, summary_to_json_file
+from infrastructure.email.email_client_pipe import EmailClientPipe
 from imapclient import IMAPClient
 from config import config
 from shared.collections_util import dict_util
