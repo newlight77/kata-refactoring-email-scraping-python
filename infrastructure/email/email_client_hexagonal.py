@@ -6,6 +6,8 @@ import json
 import os
 import urllib.parse
 from shared.file_util import file_util
+from domain.email_scraper_hexagonal import EmailScraperPort
+
 
 class EmailClientHexagonal:
     def __init__(self, config):
@@ -31,6 +33,19 @@ class EmailClientHexagonal:
             envelop = raw_envelop[b'ENVELOPE']
             raw_emails_with_envelopes.append((uid, message, envelop))
         return raw_emails_with_envelopes
+
+
+class EmailScraperAdapter(EmailScraperPort):
+    # pylint: disable=too-many-arguments
+    def __init__(self, emailClient: EmailClientHexagonal, config):
+        self.client = emailClient
+        self.config = config
+
+    def connect(self):
+        return self.client.connect()
+
+    def scrape(self):
+        return self.client.fetch_emails()
 
 
 def get_from(email_message):

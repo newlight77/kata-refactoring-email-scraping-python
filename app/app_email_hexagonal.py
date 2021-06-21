@@ -1,8 +1,7 @@
 from imapclient import IMAPClient
 from config import config
 from domain.email_scraper_hexagonal import EmailScraperHexagonal
-from infrastructure.email.email_scraper_adapter import EmailScraperAdapter
-from infrastructure.email.email_client_hexagonal import EmailClientHexagonal
+from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter
 from shared.collections_util.dict_util import DefDictToObject
 
 def run():

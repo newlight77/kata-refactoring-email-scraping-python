@@ -1,5 +1,12 @@
-from domain.email_scraper_port import EmailScraperPort
 from infrastructure.email.email_client_pipe import get_from, get_subject, parse_body, save_attachments, to_json_file
+
+class EmailScraperPort:
+    def connect(self):
+        pass
+
+    def scrape(self):
+        pass
+
 
 class EmailScraperHexagonal:
     def __init__(self, scraperAdapter: EmailScraperPort, config):
