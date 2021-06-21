@@ -6,9 +6,8 @@ import json
 import os
 import urllib.parse
 from shared.file_util import file_util
-from shared.decorators.pipe import Pipe
 
-class EmailClientPipe:
+class EmailClientPipe():
     def __init__(self, config):
         self.imap = None
         self.config = config
@@ -33,69 +32,6 @@ class EmailClientPipe:
             raw_emails_with_envelopes.append((uid, message, envelop))
         return raw_emails_with_envelopes
 
-@Pipe
-def parse_emails(raw_emails_with_envelopes):
-    print("parse emails with raw_emails_with_envelopes")
-    messages = []
-    for (uid, message, envelop) in raw_emails_with_envelopes:
-        date = envelop.date.strftime('%Y%m%d_%H%M')
-
-        email_from = get_from(message)
-        email_subject = get_subject(message).strip()
-        print(f"processing: email UID={uid} from {email_from} @ {date} -> {email_subject}")
-
-        metadata = {
-            'uid': uid,
-            'from': email_from,
-            'subject': email_subject,
-            'date': date
-        }
-
-        messages.append((uid, metadata, message))
-    return messages
-
-@Pipe
-def parse_emails_body(parsed_messages):
-    print("parse emails body with parsed_messages")
-    messages = []
-    for (uid, metadata, message) in parsed_messages:
-        print(f"parsing email body for UID={uid}")
-        metadata['body'] = parse_body(message)
-        messages.append((uid, metadata, message))
-    return messages
-
-@Pipe
-def parse_email_attachments(parsed_messages, attachment_dir):
-    print("parse emails attachments with parsed_messages")
-    messages = []
-    for (uid, metadata, message) in parsed_messages:
-        print(f"parsing email attachments for UID={uid}")
-        email_attachments = save_attachments(message, attachment_dir)
-        metadata['attachments'] = email_attachments
-        messages.append((uid, metadata, message))
-    return messages
-
-@Pipe
-def summary_to_json_file(parsed_messages, dest_dir):
-    print("write summary to json file with metadatas")
-    file_list = []
-    for (uid, metadata, message) in parsed_messages:
-        try:
-            filename = f"{metadata['from']}-{metadata['date']}-{metadata['uid']}.json"
-            file_path = to_json_file(metadata, filename, dest_dir)
-            file_list.append(file_path)
-        except ValueError:
-            print(f"an error occured while dumping metadata into json for message uid={metadata['uid']}")
-            continue
-
-    return file_list
-
-def to_json_file(metadata, filename, dest_dir):
-    print(f"trying to write json to file from with metadata={metadata['uid']}")
-    print(f"trying to write json to file={filename}")
-    json_obj = json.dumps(metadata, indent=4)
-    file_path = file_util.write_to_file(json_obj, filename, dest_dir)
-    return file_path
 
 def get_from(email_message):
     from_raw = email_message.get_all('From', [])
@@ -155,3 +91,10 @@ def save_attachment(part, dest_dir):
             file.write(part.get_payload(decode=True))
 
         return str(file_path)
+
+def to_json_file(metadata, filename, dest_dir):
+    print(f"trying to write json to file from with metadata={metadata['uid']}")
+    print(f"trying to write json to file={filename}")
+    json_obj = json.dumps(metadata, indent=4)
+    file_path = file_util.write_to_file(json_obj, filename, dest_dir)
+    return file_path
