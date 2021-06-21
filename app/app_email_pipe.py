@@ -29,7 +29,7 @@ def listen(client: EmailClientPipe, config):
     imap = client.imap
 
     if type(imap) is not IMAPClient:
-        raise ValueError("client must be of type IMAPClient")
+        raise ValueError("imap must be of type IMAPClient")
 
     client.fetch_emails() | scrape(config)
 
@@ -39,7 +39,7 @@ def listen(client: EmailClientPipe, config):
     try:
         while (True):
             responses = imap.idle_check(config.timeout)
-            print("Email client sent:", responses if responses else "nothing")
+            print("imap sent:", responses if responses else "nothing")
 
             if (responses):
                 imap.idle_done()  # Suspend the idling

@@ -17,7 +17,7 @@ class EmailClientHexagonal:
     def connect(self):
         self.imap = IMAPClient(self.config.host)
         self.imap.login(self.config.email, self.config.password)
-        return self.imap
+        return self
 
     def fetch_emails(self):
         print(f"fetch emails with imap={self.imap}")
