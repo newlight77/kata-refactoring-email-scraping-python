@@ -1,4 +1,6 @@
 from infrastructure.email.email_client_pipe import EmailClientPipe
+from domain.email_scraper_pipe import EmailScraperPipe
+
 from imapclient import IMAPClient
 from config import config
 from shared.collections_util import dict_util
@@ -29,7 +31,8 @@ def listen(client: EmailClientPipe, config):
     if type(imap) is not IMAPClient:
         raise ValueError("client must be of type IMAPClient")
     
-    client.scrape()
+    scraper = EmailScraperPipe(client, config)
+    scraper.scrape()
 
     imap.idle()
     print("Connection is now in IDLE mode.")
@@ -42,7 +45,7 @@ def listen(client: EmailClientPipe, config):
             if (responses):
                 imap.idle_done()  # Suspend the idling
 
-                client.scrape()
+                scraper.scrape()
 
                 imap.idle()  # idling
     except ValueError as ve:
