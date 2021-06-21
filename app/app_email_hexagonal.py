@@ -1,8 +1,8 @@
 from imapclient import IMAPClient
 from config import config
-from domain.email_scraper import EmailScraper
+from domain.email_scraper_hexagonal import EmailScraperHexagonal
 from infrastructure.email.email_scraper_adapter import EmailScraperAdapter
-from infrastructure.email.email_client import EmailClient, summary_to_json_file
+from infrastructure.email.email_client_hexagonal import EmailClientHexagonal
 from shared.collections_util.dict_util import DefDictToObject
 
 def run():
@@ -18,15 +18,15 @@ def run():
         'search_key_words': config.EMAIL_SEARCH_KEYWORDS.split(',')
     })
 
-    emailClient = EmailClient(scraper_config)
+    emailClient = EmailClientHexagonal(scraper_config)
     scraperAdapter = EmailScraperAdapter(emailClient, scraper_config)
-    scraper = EmailScraper(scraperAdapter)
+    scraper = EmailScraperHexagonal(scraperAdapter, scraper_config)
     handler = EmailScrapeHandler(scraper, scraperAdapter, scraper_config)
     handler.connect()
     handler.listen()
 
 class EmailScrapeHandler():
-    def __init__(self, scraper: EmailScraper, adapter: EmailScraperAdapter, config):
+    def __init__(self, scraper: EmailScraperHexagonal, adapter: EmailScraperAdapter, config):
         self.scraper = scraper
         self.adapter = adapter
         self.imap = None
@@ -42,6 +42,8 @@ class EmailScrapeHandler():
         if type(imap) is not IMAPClient:
             raise ValueError("imap must be of type IMAPClient")
 
+        self.scraper.scrape()
+
         imap.idle()
         print("Connection is now in IDLE mode.")
 
@@ -53,8 +55,7 @@ class EmailScrapeHandler():
                 if (responses):
                     imap.idle_done()  # Suspend the idling
 
-                    summary = self.scraper.scrape()
-                    summary_to_json_file(summary, self.config.attachment_dir)
+                    self.scraper.scrape()
 
                     imap.idle()  # idling
         except ValueError as ve:

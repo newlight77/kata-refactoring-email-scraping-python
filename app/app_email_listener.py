@@ -37,6 +37,8 @@ def listen(imap, config):
     if type(imap) is not IMAPClient:
         raise ValueError("imap must be of type IMAPClient")
 
+    scrape(imap, config)
+
     imap.idle()
     print("Connection is now in IDLE mode.")
 
@@ -48,8 +50,7 @@ def listen(imap, config):
             if (responses):
                 imap.idle_done()  # Suspend the idling
 
-                summary = scrape(imap, config)
-                summary_to_json_file(summary, config.attachment_dir)
+                scrape(imap, config)
 
                 imap.idle()  # idling
     except ValueError as ve:
@@ -110,7 +111,8 @@ def scrape(imap, config) -> dict:
             # 'body': email_body,
             'attachments': email_attachments
         }
-    return emails_summary
+
+    summary_to_json_file(emails_summary, config.attachment_dir)
 
 
 def get_from(email_message) -> str:
