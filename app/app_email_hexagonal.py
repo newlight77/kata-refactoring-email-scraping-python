@@ -14,6 +14,9 @@ class EmailScrapeHandler():
     def connect(self):
         return self.scraper.connect()
 
+    def scrape(self):
+        return self.scraper.scrape()
+
 
 def run():
     # pylint: disable=no-member
@@ -31,18 +34,19 @@ def run():
     imap = IMAPClient(scraper_config.host)
     client = EmailClientHexagonal(imap, scraper_config)
     client = client.connect()
-    listen(client, config)
-
-
-def listen(client: EmailClientHexagonal, config):
-    imap = client.imap
-
-    if type(imap) is not IMAPClient:
-        raise ValueError("imap must be of type IMAPClient")
-
+    
     scraperAdapter = EmailScraperAdapter(client, config)
     scraper = EmailScraperHexagonal(scraperAdapter, config)
     handler = EmailScrapeHandler(scraper, scraperAdapter, config)
+
+    listen(client, handler, config)
+
+
+def listen(client: EmailClientHexagonal, handler: EmailScrapeHandler, config):
+    imap = client.imap
+
+    # if type(imap) is not IMAPClient:
+    #     raise ValueError("imap must be of type IMAPClient")
 
     handler.scrape()
 
