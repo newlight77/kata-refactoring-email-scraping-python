@@ -1,6 +1,10 @@
+from os.path import exists
 from shared.crypto_util.crypto_class import Crypto
 
 def decrypt_email_credential(config):
+    if (not exists("config/crypto_secret.key")):
+        return config
+
     crypto = Crypto(secretFile="config/crypto_secret.key")
 
     # encrypted gmail
