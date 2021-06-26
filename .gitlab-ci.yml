@@ -25,7 +25,7 @@ ut:
     - pipenv lock -r --dev > requirements.dev.txt
     - pip install -r requirements.dev.txt
   script: 
-    - PYTHONPATH=. pytest --cov-report xml --cov=app --cov=domain --cov=infrastructure --cov=shared ./tests/unit -vv -x -s
+    - PYTHONPATH=. pytest --cov-report xml --cov=app --cov=domain --cov=infrastructure --cov=shared ./tests/unit ./tests/component -vv -x -s
     # need to correct paths to source files
     - coverage xml -i # https://stackoverflow.com/questions/12844451/test-test-coverage-with-python-in-sonar-not-showing-up
   tags:
