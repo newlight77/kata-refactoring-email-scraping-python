@@ -34,7 +34,7 @@ def run():
     imap = IMAPClient(scraper_config.host)
     client = EmailClientHexagonal(imap, scraper_config)
     client = client.connect()
-    
+
     scraperAdapter = EmailScraperAdapter(client, config)
     scraper = EmailScraperHexagonal(scraperAdapter, config)
     handler = EmailScrapeHandler(scraper, scraperAdapter, config)

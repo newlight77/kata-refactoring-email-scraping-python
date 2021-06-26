@@ -23,7 +23,9 @@ def run():
     })
 
     imap = connect(scraper_config)
-    listen(imap, scraper_config)
+    scraper = EmailScraper()
+
+    listen(imap, scraper, scraper_config)
 
 
 def connect(config):
@@ -32,12 +34,12 @@ def connect(config):
     return imap
 
 
-def listen(imap, config):
+def listen(imap, scraper, config):
 
-    if type(imap) is not IMAPClient:
-        raise ValueError("imap must be of type IMAPClient")
+    # if type(imap) is not IMAPClient:
+    #    raise ValueError("imap must be of type IMAPClient")
 
-    scrape(imap, config)
+    scraper.scrape(imap, config)
 
     imap.idle()
     print("Connection is now in IDLE mode.")
@@ -50,7 +52,7 @@ def listen(imap, config):
             if (responses):
                 imap.idle_done()  # Suspend the idling
 
-                scrape(imap, config)
+                scraper.scrape(imap, config)
 
                 imap.idle()  # idling
     except ValueError as ve:
@@ -63,79 +65,79 @@ def listen(imap, config):
         imap.logout()
 
 
-def scrape(imap, config) -> dict:
-    if type(imap) is not IMAPClient:
-        raise ValueError("imap must be of type IMAPClient")
+class EmailScraper():
 
-    metadatas = []
+    def scrape(self, imap, config):
+        # if type(imap) is not IMAPClient:
+        #    raise ValueError("imap must be of type IMAPClient")
 
-    imap.select_folder(config.folder, readonly=False)
-    messages = imap.search([config.search_key_words])
-    raw_envelopes = imap.fetch(messages, ['ENVELOPE']).items()
-    raw_emails = imap.fetch(messages, 'RFC822').items()
-    for (uid, raw_message), (uid, raw_envelop) in zip(raw_emails, raw_envelopes):
-        envelop = raw_envelop[b'ENVELOPE']
-        date = envelop.date.strftime('%Y%m%d_%H%M')
+        metadatas = []
 
-        message = email.message_from_bytes(raw_message[b'RFC822'])
-        email_from = get_from(message)
-        subject = message.get("Subject")
-        subject, encoding = decode_header(str(subject))[0]
-        email_subject = str(subject).strip()
-        print(f"processing: email UID={uid} from {email_from} @ {date} -> {email_subject}")
+        imap.select_folder(config.folder, readonly=False)
+        messages = imap.search([config.search_key_words])
+        raw_envelopes = imap.fetch(messages, ['ENVELOPE']).items()
+        raw_emails = imap.fetch(messages, 'RFC822').items()
+        for (uid, raw_message), (uid, raw_envelop) in zip(raw_emails, raw_envelopes):
+            envelop = raw_envelop[b'ENVELOPE']
+            date = envelop.date.strftime('%Y%m%d_%H%M')
 
-        email_body = {}
-        email_attachments = []
-        if message.is_multipart():
-            for part in message.walk():
-                if part.get_content_type() == 'text/html':
-                    email_body["Plain_HTML"] = html2text.html2text(part.get_payload())
-                    email_body["HTML"] = part.get_payload()
+            message = email.message_from_bytes(raw_message[b'RFC822'])
+            email_from = self.__get_from(message)
+            subject = message.get("Subject")
+            subject, encoding = decode_header(str(subject))[0]
+            email_subject = str(subject).strip()
+            print(f"processing: email UID={uid} from {email_from} @ {date} -> {email_subject}")
+            email_body = {}
+            email_attachments = []
+            if message.is_multipart():
+                for part in message.walk():
+                    if part.get_content_type() == 'text/html':
+                        email_body["Plain_HTML"] = html2text.html2text(part.get_payload())
+                        email_body["HTML"] = part.get_payload()
 
-                if part.get_content_type() == 'text/plain':
-                    email_body["Plain_Text"] = part.get_payload()
+                    if part.get_content_type() == 'text/plain':
+                        email_body["Plain_Text"] = part.get_payload()
 
-                if bool(part.get_filename()):
-                    file_path = os.path.join(config.attachment_dir, part.get_filename())
-                    file_path = urllib.parse.unquote(file_path)
-                    print(f"save cv to file {file_path}")
-                    with open(file_path, 'wb') as file:
-                        file.write(part.get_payload(decode=True))
-                    email_attachments.append(file_path)
-        else:
-            if message.get_content_type() == 'text/html':
-                email_body["Plain_HTML"] = html2text.html2text(message.get_payload())
-                email_body["HTML"] = message.get_payload()
+                    if bool(part.get_filename()):
+                        file_path = os.path.join(config.attachment_dir, part.get_filename())
+                        file_path = urllib.parse.unquote(file_path)
+                        print(f"save cv to file {file_path}")
+                        with open(file_path, 'wb') as file:
+                            file.write(part.get_payload(decode=True))
+                        email_attachments.append(file_path)
+            else:
+                if message.get_content_type() == 'text/html':
+                    email_body["Plain_HTML"] = html2text.html2text(message.get_payload())
+                    email_body["HTML"] = message.get_payload()
 
-            if message.get_content_type() == 'text/plain':
-                email_body["Plain_Text"] = message.get_payload()
+                if message.get_content_type() == 'text/plain':
+                    email_body["Plain_Text"] = message.get_payload()
 
-        metadatas.append({
-            'uid': uid,
-            'from': email_from,
-            'subject': email_subject,
-            'date': date,
-            # 'body': email_body,
-            'attachments': email_attachments
-        })
+            metadatas.append({
+                'uid': uid,
+                'from': email_from,
+                'subject': email_subject,
+                'date': date,
+                # 'body': email_body,
+                'attachments': email_attachments
+            })
 
-    for metadata in metadatas:
-        try:
-            json_obj = json.dumps(metadata, indent=4)
-            filename = f"{metadata['from']}-{metadata['date']}-{metadata['uid']}.json"
-            file_path = file_util.write_to_file(json_obj, filename, config.attachment_dir)
-        except ValueError:
-            continue
+        for metadata in metadatas:
+            try:
+                json_obj = json.dumps(metadata, indent=4)
+                filename = f"{metadata['from']}-{metadata['date']}-{metadata['uid']}.json"
+                file_path = file_util.write_to_file(json_obj, filename, config.attachment_dir)
+            except ValueError:
+                continue
 
+    def __get_from(self, email_message):
+        from_raw = email_message.get_all('From', [])
+        from_list = email.utils.getaddresses(from_raw)
 
-def get_from(email_message) -> str:
-    from_raw = email_message.get_all('From', [])
-    from_list = email.utils.getaddresses(from_raw)
+        if len(from_list[0]) == 1:
+            return from_list[0][0]
 
-    if len(from_list[0]) == 1:
-        return from_list[0][0]
+        if len(from_list[0]) == 2:
+            return from_list[0][1]
 
-    if len(from_list[0]) == 2:
-        return from_list[0][1]
-
-    return "UnknownEmail"
+        return "UnknownEmail"

@@ -1,10 +1,8 @@
-from config import config
 from shared.collections_util import dict_util
-from infrastructure.email.email_client_pipe import EmailClientPipe
-from app.app_email_pipe import listen
+from app.app_email_listener import EmailScraper, listen
 from imapclient import IMAPClient
 import pytest
-from unittest.mock import Mock
+from unittest import mock
 
 @pytest.fixture
 def scraper_config():
@@ -22,44 +20,26 @@ def scraper_config():
 
 @pytest.fixture
 def imap():
-    return Mock()
-
-@pytest.fixture
-def email_client_pipe(imap, scraper_config):
-    return EmailClientPipe(imap, scraper_config)
+    return mock.Mock()
 
 
-def test_should_connect_imap_pipe(scraper_config):
-    # Arrange
-    client = EmailClientPipe(Mock(), scraper_config)
-
-    # Act
-    client = client.connect()
-
-    # Assert
-    #assert client.imap.login is None
-    client.imap.login.assert_called_once_with('test@example.com', 'test-password')
-
-
-def test_should_start_listening_pipe(imap, scraper_config):
+def test_should_listener_start_listening_with_no_data(imap, scraper_config):
     # Arrange
     # pylint: disable=no-member
-    client = EmailClientPipe(imap, scraper_config)
     imap.select_folder(scraper_config.folder, readonly=False).return_value = None
 
     message = {}
     message[b'RFC822'] = bytes('email2', 'utf-8')
-    #items = {'11': [(1, message)]}
 
     messages = {}
     imap.search.return_value = messages
-    imap.fetch.return_value = messages
 
-    def items(messages, arg):
-        print('fetch', messages, arg)
-        return [(1, message), (1, message)]
+    class Items():
+        def items(self):
+            print('fetch', messages)
+            return []
 
-    imap.fetch.items = items
+    imap.fetch.return_value = Items()
 
     times = 0
 
@@ -71,8 +51,10 @@ def test_should_start_listening_pipe(imap, scraper_config):
 
     imap.idle = idle
 
+    scraper = EmailScraper()
+
     # Act
-    client | listen(scraper_config)
+    listen(imap, scraper, scraper_config)
 
     # Assert
-    client.imap.logout.assert_called()
+    imap.logout.assert_called()
