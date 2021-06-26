@@ -42,7 +42,7 @@ def test_should_connect_imap_hexagonal(scraper_config):
     client.imap.login.assert_called_once_with('test@example.com', 'test-password')
 
 
-def test_should_start_listening_hexagonal(imap, scraper_config):
+def test_should_hexagonal_start_listening_with_no_data(imap, scraper_config):
     # Arrange
     # pylint: disable=no-member
     client = EmailClientHexagonal(imap, scraper_config)
@@ -54,13 +54,11 @@ def test_should_start_listening_hexagonal(imap, scraper_config):
 
     messages = {}
     imap.search.return_value = messages
-    imap.fetch.return_value = messages
 
-    def items(messages, arg):
-        print('fetch', messages, arg)
-        return [(1, message), (1, message)]
+    def items():
+        return []
 
-    imap.fetch.items = items
+    imap.fetch.return_value = Mock(items=items)
 
     times = 0
 

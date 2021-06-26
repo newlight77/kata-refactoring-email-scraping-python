@@ -34,12 +34,10 @@ def test_should_listener_start_listening_with_no_data(imap, scraper_config):
     messages = {}
     imap.search.return_value = messages
 
-    class Items():
-        def items(self):
-            print('fetch', messages)
-            return []
+    def items():
+        return []
 
-    imap.fetch.return_value = Items()
+    imap.fetch.return_value = mock.Mock(items=items)
 
     times = 0
 
