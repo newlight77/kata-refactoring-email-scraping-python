@@ -13,6 +13,7 @@ imapclient = "*"
 cryptography = "*"
 
 [dev-packages]
+mock = "*"
 pycodestyle = "*"
 pyflakes = "*"
 mccabe = "*"

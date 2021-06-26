@@ -8,12 +8,12 @@ import urllib.parse
 from shared.file_util import file_util
 
 class EmailClientPipe():
-    def __init__(self, config):
-        self.imap = None
+    def __init__(self, imap, config):
+        self.imap = imap
         self.config = config
 
     def connect(self):
-        self.imap = IMAPClient(self.config.host)
+        self.imap = self.imap or IMAPClient(self.config.host)
         self.imap.login(self.config.email, self.config.password)
         return self
 
@@ -23,7 +23,6 @@ class EmailClientPipe():
         messages = self.imap.search(self.config.search_key_words)
         raw_envelopes = self.imap.fetch(messages, ['ENVELOPE']).items()
         raw_emails = self.imap.fetch(messages, 'RFC822').items()
-
         raw_emails_with_envelopes = []
         for (uid, raw_message), (uid, raw_envelop) in zip(raw_emails, raw_envelopes):
             print(f"fetch emails: yield UID={uid}")

@@ -10,12 +10,12 @@ from domain.email_scraper_hexagonal import EmailScraperPort
 
 
 class EmailClientHexagonal:
-    def __init__(self, config):
-        self.imap = None
+    def __init__(self, imap, config):
+        self.imap = imap
         self.config = config
 
     def connect(self):
-        self.imap = IMAPClient(self.config.host)
+        self.imap = self.imap or IMAPClient(self.config.host)
         self.imap.login(self.config.email, self.config.password)
         return self
 

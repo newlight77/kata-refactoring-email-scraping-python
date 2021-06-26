@@ -28,8 +28,9 @@ def run():
         'search_key_words': config.EMAIL_SEARCH_KEYWORDS.split(',')
     })
 
-    emailClient = EmailClientHexagonal(scraper_config)
-    client = emailClient.connect()
+    imap = IMAPClient(scraper_config.host)
+    client = EmailClientHexagonal(imap, scraper_config)
+    client = client.connect()
     listen(client, config)
 
 

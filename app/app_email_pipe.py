@@ -19,7 +19,8 @@ def run():
         'search_key_words': config.EMAIL_SEARCH_KEYWORDS.split(',')
     })
 
-    client = EmailClientPipe(scraper_config)
+    imap = IMAPClient(scraper_config.host)
+    client = EmailClientPipe(imap, scraper_config)
     client.connect() \
         | listen(scraper_config)
 
@@ -28,10 +29,11 @@ def run():
 def listen(client: EmailClientPipe, config):
     imap = client.imap
 
-    if type(imap) is not IMAPClient:
-        raise ValueError("imap must be of type IMAPClient")
+    # if type(imap) is not IMAPClient:
+    #     raise ValueError("imap must be of type IMAPClient")
 
     client.fetch_emails() | scrape(config)
+    print(f"imap = {imap}")
 
     imap.idle()
     print("Connection is now in IDLE mode.")
@@ -55,3 +57,5 @@ def listen(client: EmailClientPipe, config):
         print("terminating the app")
         imap.idle_done()
         imap.logout()
+
+    return client
