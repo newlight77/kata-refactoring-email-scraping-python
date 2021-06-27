@@ -2,9 +2,12 @@ from infrastructure.email.email_client_pipe import EmailClientPipe
 from domain.email_scraper_pipe import scrape
 
 from imapclient import IMAPClient
+import logging
 from config import config
 from shared.collections_util import dict_util
 from shared.decorators.pipe import Pipe
+
+logger = logging.getLogger(__name__)
 
 def run():
     # pylint: disable=no-member
@@ -33,15 +36,15 @@ def listen(client: EmailClientPipe, config):
     #     raise ValueError("imap must be of type IMAPClient")
 
     client.fetch_emails() | scrape(config)
-    print(f"imap = {imap}")
+    logger.info(f"imap = {imap}")
 
     imap.idle()
-    print("Connection is now in IDLE mode.")
+    logger.info("Connection is now in IDLE mode.")
 
     try:
         while (True):
             responses = imap.idle_check(config.timeout)
-            print("imap sent:", responses if responses else "nothing")
+            logger.info("imap sent:", responses if responses else "nothing")
 
             if (responses):
                 imap.idle_done()  # Suspend the idling
@@ -50,11 +53,11 @@ def listen(client: EmailClientPipe, config):
 
                 imap.idle()  # idling
     except ValueError as ve:
-        print(f"error: {ve}")
+        logger.error(f"error: {ve}")
     except KeyboardInterrupt as ki:
-        print(f"error: {ki}")
+        logger.error(f"error: {ki}")
     finally:
-        print("terminating the app")
+        logger.info("terminating the app")
         imap.idle_done()
         imap.logout()
 

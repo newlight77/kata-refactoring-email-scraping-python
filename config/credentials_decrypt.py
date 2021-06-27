@@ -1,5 +1,8 @@
 from os.path import exists
+import logging
 from shared.crypto_util.crypto_class import Crypto
+
+logger = logging.getLogger(__name__)
 
 def decrypt_email_credential(config):
     if (not exists("config/crypto_secret.key")):
@@ -17,9 +20,9 @@ def decrypt_email_credential(config):
 
     #email = crypto.encrypt_message(config.EMAIL).__str__()
     #password = crypto.encrypt_message(config.EMAIL_PASSWORD).__str__()
-    #print(f"{email} : {password}")
+    #logger.info(f"{email} : {password}")
 
-    print(f"{config.EMAIL} : {config.EMAIL_PASSWORD}")
+    logger.info(f"{config.EMAIL} : {config.EMAIL_PASSWORD}")
 
     config.EMAIL = crypto.decrypt_message(email)
     config.EMAIL_PASSWORD = crypto.decrypt_message(password)

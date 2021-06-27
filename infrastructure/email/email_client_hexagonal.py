@@ -3,10 +3,13 @@ from email.header import decode_header
 import html2text
 from imapclient import IMAPClient
 import json
+import logging
 import os
 import urllib.parse
 from shared.file_util import file_util
 from domain.email_scraper_hexagonal import EmailScraperPort
+
+logger = logging.getLogger(__name__)
 
 
 class EmailClientHexagonal:
@@ -20,7 +23,7 @@ class EmailClientHexagonal:
         return self
 
     def fetch_emails(self):
-        print(f"fetch emails with imap={self.imap}")
+        logger.debug(f"fetch emails with imap={self.imap}")
         self.imap.select_folder(self.config.folder, readonly=False)
         messages = self.imap.search(self.config.search_key_words)
         raw_envelopes = self.imap.fetch(messages, ['ENVELOPE']).items()
@@ -28,7 +31,7 @@ class EmailClientHexagonal:
 
         raw_emails_with_envelopes = []
         for (uid, raw_message), (uid, raw_envelop) in zip(raw_emails, raw_envelopes):
-            print(f"fetch emails: yield UID={uid}")
+            logger.info(f"fetch emails: yield UID={uid}")
             message = email.message_from_bytes(raw_message[b'RFC822'])
             envelop = raw_envelop[b'ENVELOPE']
             raw_emails_with_envelopes.append((uid, message, envelop))
@@ -101,15 +104,15 @@ def save_attachment(part, dest_dir):
     if bool(part.get_filename()):
         file_path = os.path.join(dest_dir, part.get_filename())
         file_path = urllib.parse.unquote(file_path)
-        print(f"save cv to file {file_path}")
+        logger.info(f"saving cv to file {file_path}")
         with open(file_path, 'wb') as file:
             file.write(part.get_payload(decode=True))
 
         return str(file_path)
 
 def to_json_file(metadata, filename, dest_dir):
-    print(f"trying to write json to file from with metadata={metadata['uid']}")
-    print(f"trying to write json to file={filename}")
+    logger.debug(f"trying to write json to file from with metadata={metadata['uid']}")
+    logger.debug(f"trying to write json to file={filename}")
     json_obj = json.dumps(metadata, indent=4)
     file_path = file_util.write_to_file(json_obj, filename, dest_dir)
     return file_path

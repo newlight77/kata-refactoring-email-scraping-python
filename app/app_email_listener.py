@@ -3,11 +3,14 @@ from email.header import decode_header
 import html2text
 from imapclient import IMAPClient
 import json
+import logging
 import os
 import urllib.parse
 from config import config
 from shared.collections_util import dict_util
 from shared.file_util import file_util
+
+logger = logging.getLogger(__name__)
 
 def run():
     # pylint: disable=no-member
@@ -42,12 +45,12 @@ def listen(imap, scraper, config):
     scraper.scrape(imap, config)
 
     imap.idle()
-    print("Connection is now in IDLE mode.")
+    logger.info("Connection is now in IDLE mode.")
 
     try:
         while (True):
             responses = imap.idle_check(config.timeout)
-            print("imap sent:", responses if responses else "nothing")
+            logger.info("imap sent:", responses if responses else "nothing")
 
             if (responses):
                 imap.idle_done()  # Suspend the idling
@@ -56,11 +59,11 @@ def listen(imap, scraper, config):
 
                 imap.idle()  # idling
     except ValueError as ve:
-        print(f"error: {ve}")
+        logger.error(f"error: {ve}")
     except KeyboardInterrupt as ki:
-        print(f"error: {ki}")
+        logger.error(f"error: {ki}")
     finally:
-        print("terminating the app")
+        logger.info("terminating the app")
         imap.idle_done()
         imap.logout()
 
@@ -86,7 +89,7 @@ class EmailScraper():
             subject = message.get("Subject")
             subject, encoding = decode_header(str(subject))[0]
             email_subject = str(subject).strip()
-            print(f"processing: email UID={uid} from {email_from} @ {date} -> {email_subject}")
+            logger.info(f"processing: email UID={uid} from {email_from} @ {date} -> {email_subject}")
             email_body = {}
             email_attachments = []
             if message.is_multipart():
@@ -101,7 +104,7 @@ class EmailScraper():
                     if bool(part.get_filename()):
                         file_path = os.path.join(config.attachment_dir, part.get_filename())
                         file_path = urllib.parse.unquote(file_path)
-                        print(f"save cv to file {file_path}")
+                        logger.info(f"saving cv to file {file_path}")
                         with open(file_path, 'wb') as file:
                             file.write(part.get_payload(decode=True))
                         email_attachments.append(file_path)

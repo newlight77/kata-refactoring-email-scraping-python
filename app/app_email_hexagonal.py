@@ -1,9 +1,11 @@
 from imapclient import IMAPClient
+import logging
 from config import config
 from domain.email_scraper_hexagonal import EmailScraperHexagonal
 from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter
 from shared.collections_util import dict_util
 
+logger = logging.getLogger(__name__)
 
 class EmailScrapeHandler():
     def __init__(self, scraper: EmailScraperHexagonal, adapter: EmailScraperAdapter, config):
@@ -51,12 +53,12 @@ def listen(client: EmailClientHexagonal, handler: EmailScrapeHandler, config):
     handler.scrape()
 
     imap.idle()
-    print("Connection is now in IDLE mode.")
+    logger.info("Connection is now in IDLE mode.")
 
     try:
         while (True):
             responses = imap.idle_check(config.timeout)
-            print("imap sent:", responses if responses else "nothing")
+            logger.info("imap sent:", responses if responses else "nothing")
 
             if (responses):
                 imap.idle_done()  # Suspend the idling
@@ -65,10 +67,10 @@ def listen(client: EmailClientHexagonal, handler: EmailScrapeHandler, config):
 
                 imap.idle()  # idling
     except ValueError as ve:
-        print(f"error: {ve}")
+        logger.error(f"error: {ve}")
     except KeyboardInterrupt as ki:
-        print(f"error: {ki}")
+        logger.error(f"error: {ki}")
     finally:
-        print("terminating the app")
+        logger.info("terminating the app")
         imap.idle_done()
         imap.logout()
