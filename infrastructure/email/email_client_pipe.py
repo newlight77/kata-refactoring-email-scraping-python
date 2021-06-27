@@ -3,12 +3,12 @@ from email.header import decode_header
 import html2text
 from imapclient import IMAPClient
 import json
-import logging
 import os
 import urllib.parse
 from shared.file_util import file_util
+from config import logger, config
 
-logger = logging.getLogger(__name__)
+logger = logger.logger(__name__, config.LOG_LEVEL)
 
 class EmailClientPipe():
     def __init__(self, imap, config):

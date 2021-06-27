@@ -2,12 +2,12 @@ from infrastructure.email.email_client_pipe import EmailClientPipe
 from domain.email_scraper_pipe import scrape
 
 from imapclient import IMAPClient
-import logging
 from config import config
 from shared.collections_util import dict_util
 from shared.decorators.pipe import Pipe
+from config import logger
 
-logger = logging.getLogger(__name__)
+logger = logger.logger(__name__, config.LOG_LEVEL)
 
 def run():
     # pylint: disable=no-member
@@ -44,7 +44,7 @@ def listen(client: EmailClientPipe, config):
     try:
         while (True):
             responses = imap.idle_check(config.timeout)
-            logger.info("imap sent:", responses if responses else "nothing")
+            logger.info("imap sent: %s", responses if responses else "nothing")
 
             if (responses):
                 imap.idle_done()  # Suspend the idling

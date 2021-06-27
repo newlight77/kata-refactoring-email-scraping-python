@@ -1,7 +1,7 @@
-import logging
 from infrastructure.email.email_client_pipe import get_from, get_subject, parse_body, save_attachments, to_json_file
+from config import logger, config
 
-logger = logging.getLogger(__name__)
+logger = logger.logger(__name__, config.LOG_LEVEL)
 
 class EmailScraperPort:
     def connect(self):

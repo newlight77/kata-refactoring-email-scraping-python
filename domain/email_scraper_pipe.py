@@ -1,9 +1,8 @@
-import logging
 from infrastructure.email.email_client_pipe import get_from, get_subject, parse_body, save_attachments, to_json_file
 from shared.decorators.pipe import Pipe
+from config import logger, config
 
-logger = logging.getLogger(__name__)
-
+logger = logger.logger(__name__, config.LOG_LEVEL)
 
 @Pipe
 def scrape(data, config):

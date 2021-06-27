@@ -1,11 +1,11 @@
 from imapclient import IMAPClient
-import logging
 from config import config
 from domain.email_scraper_hexagonal import EmailScraperHexagonal
 from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter
 from shared.collections_util import dict_util
+from config import logger
 
-logger = logging.getLogger(__name__)
+logger = logger.logger(__name__, config.LOG_LEVEL)
 
 class EmailScrapeHandler():
     def __init__(self, scraper: EmailScraperHexagonal, adapter: EmailScraperAdapter, config):
@@ -58,7 +58,7 @@ def listen(client: EmailClientHexagonal, handler: EmailScrapeHandler, config):
     try:
         while (True):
             responses = imap.idle_check(config.timeout)
-            logger.info("imap sent:", responses if responses else "nothing")
+            logger.info("imap sent: %s", responses if responses else "nothing")
 
             if (responses):
                 imap.idle_done()  # Suspend the idling

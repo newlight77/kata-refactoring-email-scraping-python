@@ -1,6 +1,6 @@
 import logging
-from logging.config import dictConfig
-import colorlog  # NOQA
+import logging.config
+import config
 
 class InfoFilter(logging.Filter):
     def filter(self, record):
@@ -24,14 +24,18 @@ class RemoveLevelFilter(object):
         }
         return switcher.get(levelno, "INFO")
 
-def configure_logger(config):
+def logger(name, level="INFO"):
 
     # with open("logging.json", "r", encoding="utf-8") as fd:
     #     logging.config.dictConfig(json.load(fd))
 
-    colorlog.LevelFormatter
+    # with open("config/logging.yml", "rt") as f:
+    #     config = yaml.safe_load(f.read())
+    #     config["root"]["level"] = level
+    #     logging.config.dictConfig(config)
 
-    dictConfig({
+    import colorlog
+    logging.config.dictConfig({
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
@@ -42,25 +46,25 @@ def configure_logger(config):
                 "format": "%(message)s",
             },
             "color": {
-                "()": "colorlog.LevelFormatter",
+                "()": colorlog.LevelFormatter,
                 "fmt": "%(log_color)s%(asctime)s :: %(levelname)s :: %(threadName)s :: %(module)s :: %(message)s",
             }
         },
         "filters": {
             "skipDebug": {
-                "()": "config.logger.RemoveLevelFilter",
+                "()": config.logger.RemoveLevelFilter,
                 "levelToSkip": "DEBUG"
             },
             "skipInfo": {
-                "()": "config.logger.RemoveLevelFilter",
+                "()": config.logger.RemoveLevelFilter,
                 "levelToSkip": "INFO",
             },
             "skipWarning": {
-                "()": "config.logger.RemoveLevelFilter",
+                "()": config.logger.RemoveLevelFilter,
                 "levelToSkip": "WARNING",
             },
             "skipError": {
-                "()": "config.logger.RemoveLevelFilter",
+                "()": config.logger.RemoveLevelFilter,
                 "levelToSkip": "ERROR",
             }
         },
@@ -98,7 +102,9 @@ def configure_logger(config):
             }
         },
         "root": {
-            "level": "DEBUG" if config["DEBUG"] else "INFO",
-            "handlers": ["console", "file"] if config["DEBUG"] else ["console", "file", "access_file", "error_file"],
+            "level": "DEBUG" if level == "DEBUG" else "INFO",
+            "handlers": ["console", "file"] if level == "DEBUG" else ["console", "file", "access_file", "error_file"],
         }
     })
+
+    return logging.getLogger(name)

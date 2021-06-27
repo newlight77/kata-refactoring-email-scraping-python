@@ -3,14 +3,14 @@ from email.header import decode_header
 import html2text
 from imapclient import IMAPClient
 import json
-import logging
 import os
 import urllib.parse
 from config import config
 from shared.collections_util import dict_util
 from shared.file_util import file_util
+from config import logger
 
-logger = logging.getLogger(__name__)
+logger = logger.logger(__name__, config.LOG_LEVEL)
 
 def run():
     # pylint: disable=no-member
@@ -50,7 +50,7 @@ def listen(imap, scraper, config):
     try:
         while (True):
             responses = imap.idle_check(config.timeout)
-            logger.info("imap sent:", responses if responses else "nothing")
+            logger.info("imap sent: %s", responses if responses else "nothing")
 
             if (responses):
                 imap.idle_done()  # Suspend the idling
