@@ -22,7 +22,7 @@ lint:
 	@./tools/linter/lint.sh
 
 test:
-	@PYTHONPATH=. pytest
+	@PYTHONPATH=. pytest -v -s
 
 run:
 	@python app.py
@@ -54,10 +54,10 @@ dc-up:
 	@docker-compose up -d
 
 unit-test:
-	@pytest -vv -x -s -k unit
+	@PYTHONPATH=. pytest -v -s -k unit
 
-integration-test:
-	@pytest -vv -x -s -k integration
+component-test:
+	@PYTHONPATH=. pytest -v -s -k component
 
 all-test:
-	@pytest -vv -x -s
+	@PYTHONPATH=. pytest -v -s
