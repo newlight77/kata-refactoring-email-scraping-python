@@ -1,4 +1,4 @@
-from infrastructure.email.email_client_pipe import get_from, get_subject, parse_body, save_attachments, to_json_file
+from infrastructure.email import email_parser
 from shared.decorators.pipe import Pipe
 from config import logger, config
 
@@ -19,8 +19,8 @@ def parse_emails(raw_emails_with_envelopes):
     for (uid, message, envelop) in raw_emails_with_envelopes:
         date = envelop.date.strftime('%Y%m%d_%H%M')
 
-        email_from = get_from(message)
-        email_subject = get_subject(message).strip()
+        email_from = email_parser.get_from(message)
+        email_subject = email_parser.get_subject(message).strip()
         logger.info(f"processing: email UID={uid} from {email_from} @ {date} -> {email_subject}")
 
         metadata = {
@@ -39,7 +39,7 @@ def parse_emails_body(parsed_messages):
     messages = []
     for (uid, metadata, message) in parsed_messages:
         logger.debug(f"parsing email body for UID={uid}")
-        metadata['body'] = parse_body(message)
+        metadata['body'] = email_parser.parse_body(message)
         messages.append((uid, metadata, message))
     return messages
 
@@ -49,7 +49,7 @@ def parse_email_attachments(parsed_messages, attachment_dir):
     messages = []
     for (uid, metadata, message) in parsed_messages:
         logger.debug(f"parsing email attachments for UID={uid}")
-        email_attachments = save_attachments(message, attachment_dir)
+        email_attachments = email_parser.save_attachments(message, attachment_dir)
         metadata['attachments'] = email_attachments
         messages.append((uid, metadata, message))
     return messages
@@ -61,7 +61,7 @@ def summary_to_json_file(parsed_messages, dest_dir):
     for (uid, metadata, message) in parsed_messages:
         try:
             filename = f"{metadata['from']}-{metadata['date']}-{metadata['uid']}.json"
-            file_path = to_json_file(metadata, filename, dest_dir)
+            file_path = email_parser.to_json_file(metadata, filename, dest_dir)
             file_list.append(file_path)
         except ValueError:
             logger.error(f"an error occured while dumping metadata into json for message uid={metadata['uid']}")
