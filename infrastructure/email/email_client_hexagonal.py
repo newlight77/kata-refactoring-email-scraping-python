@@ -104,15 +104,14 @@ def save_attachment(part, dest_dir):
     if bool(part.get_filename()):
         file_path = os.path.join(dest_dir, part.get_filename())
         file_path = urllib.parse.unquote(file_path)
-        logger.info(f"saving cv to file {file_path}")
+        logger.debug(f"saving cv to file {file_path}")
         with open(file_path, 'wb') as file:
             file.write(part.get_payload(decode=True))
 
         return str(file_path)
 
 def to_json_file(metadata, filename, dest_dir):
-    logger.debug(f"trying to write json to file from with metadata={metadata['uid']}")
-    logger.debug(f"trying to write json to file={filename}")
+    logger.debug(f"trying to write json to file={filename} with uid={metadata['uid']}")
     json_obj = json.dumps(metadata, indent=4)
     file_path = file_util.write_to_file(json_obj, filename, dest_dir)
     return file_path
