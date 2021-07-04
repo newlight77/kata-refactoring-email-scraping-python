@@ -1,7 +1,7 @@
-from infrastructure.email import email_parser
 from config import logger, config
 
 logger = logger.logger(__name__, config.LOG_LEVEL)
+
 
 class EmailScraperPort:
     def connect(self):
@@ -11,10 +11,28 @@ class EmailScraperPort:
         pass
 
 
+class EmailParserPort:
+    def get_from(self, message):
+        pass
+
+    def get_subject(self, message):
+        pass
+
+    def parse_body(self, message):
+        pass
+
+    def save_attachments(self, message, attachment_dir):
+        pass
+
+    def to_json_file(self, metadata, filename, dest_dir):
+        pass
+
+
 class EmailScraperHexagonal:
-    def __init__(self, scraperAdapter: EmailScraperPort, config):
+    def __init__(self, scraperAdapter: EmailScraperPort, emailParser: EmailParserPort, config):
         self.config = config
         self.adapter = scraperAdapter
+        self.emailParser = emailParser
 
     def connect(self):
         return self.adapter.connect()
@@ -23,6 +41,7 @@ class EmailScraperHexagonal:
         raw_emails_with_envelopes = self.adapter.scrape()
         parsed_messages = self.parse_emails(raw_emails_with_envelopes)
         parsed_messages = self.parse_emails_body(parsed_messages)
+        print('self.config', self.config)
         parsed_messages = self.parse_email_attachments(parsed_messages, self.config.attachment_dir)
         self.summary_to_json_file(parsed_messages, self.config.attachment_dir)
 
@@ -32,8 +51,8 @@ class EmailScraperHexagonal:
         for (uid, message, envelop) in raw_emails_with_envelopes:
             date = envelop.date.strftime('%Y%m%d_%H%M')
 
-            email_from = email_parser.get_from(message)
-            email_subject = email_parser.get_subject(message).strip()
+            email_from = self.emailParser.get_from(message)
+            email_subject = self.emailParser.get_subject(message).strip()
             logger.info(f"processing: email UID={uid} from {email_from} @ {date} -> {email_subject}")
 
             metadata = {
@@ -51,7 +70,7 @@ class EmailScraperHexagonal:
         messages = []
         for (uid, metadata, message) in parsed_messages:
             logger.debug(f"parsing email body for UID={uid}")
-            metadata['body'] = email_parser.parse_body(message)
+            metadata['body'] = self.emailParser.parse_body(message)
             messages.append((uid, metadata, message))
         return messages
 
@@ -60,7 +79,7 @@ class EmailScraperHexagonal:
         messages = []
         for (uid, metadata, message) in parsed_messages:
             logger.debug(f"parsing email attachments for UID={uid}")
-            email_attachments = email_parser.save_attachments(message, attachment_dir)
+            email_attachments = self.emailParser.save_attachments(message, attachment_dir)
             metadata['attachments'] = email_attachments
             messages.append((uid, metadata, message))
         return messages
@@ -71,7 +90,7 @@ class EmailScraperHexagonal:
         for (uid, metadata, message) in parsed_messages:
             try:
                 filename = f"{metadata['from']}-{metadata['date']}-{metadata['uid']}.json"
-                file_path = email_parser.to_json_file(metadata, filename, dest_dir)
+                file_path = self.emailParser.to_json_file(metadata, filename, dest_dir)
                 file_list.append(file_path)
             except ValueError:
                 logger.error(f"an error occured while dumping metadata into json for message uid={metadata['uid']}")

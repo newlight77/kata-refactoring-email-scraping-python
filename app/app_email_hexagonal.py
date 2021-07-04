@@ -1,16 +1,15 @@
 from imapclient import IMAPClient
 from config import config
 from domain.email_scraper_hexagonal import EmailScraperHexagonal
-from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter
+from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter, EmailParserAdapter
 from shared.collections_util import dict_util
 from config import logger
 
 logger = logger.logger(__name__, config.LOG_LEVEL)
 
 class EmailScrapeHandler():
-    def __init__(self, scraper: EmailScraperHexagonal, adapter: EmailScraperAdapter, config):
+    def __init__(self, scraper: EmailScraperHexagonal, config):
         self.scraper = scraper
-        self.adapter = adapter
         self.config = config
 
     def connect(self):
@@ -37,11 +36,12 @@ def run():
     client = EmailClientHexagonal(imap, scraper_config)
     client = client.connect()
 
-    scraperAdapter = EmailScraperAdapter(client, config)
-    scraper = EmailScraperHexagonal(scraperAdapter, config)
-    handler = EmailScrapeHandler(scraper, scraperAdapter, config)
+    scraperAdapter = EmailScraperAdapter(client, scraper_config)
+    parserAdapter = EmailParserAdapter()
+    scraper = EmailScraperHexagonal(scraperAdapter, parserAdapter, scraper_config)
+    handler = EmailScrapeHandler(scraper, scraper_config)
 
-    listen(client, handler, config)
+    listen(client, handler, scraper_config)
 
 
 def listen(client: EmailClientHexagonal, handler: EmailScrapeHandler, config):
