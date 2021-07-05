@@ -1,4 +1,5 @@
 import pytest
+import json
 import os
 from unittest.mock import Mock
 from domain import email_scraper_pipe as scraper
@@ -32,7 +33,8 @@ def run_before_and_after_tests():
         os.remove("/tmp/i-2021-06-28_1011-1.json")
 
 
-def test_should_scrape_all_email(scraper_config):
+def test_should_scrape_email_with_attachment_by_mocking_data_with_pipe_impl(scraper_config):
+    # Arrange
     part1 = Mock()
     part1.get_content_type.return_value = 'text/plain'
     part1.get_payload.return_value = 'email content'
@@ -53,4 +55,14 @@ def test_should_scrape_all_email(scraper_config):
     raw_emails_with_envelopes = []
     raw_emails_with_envelopes.append((1, message, envelope))
 
+    # Act
     raw_emails_with_envelopes | scraper.scrape(scraper_config)
+
+    # Assert
+    assert os.path.isfile("/tmp/filename.pdf")
+    assert os.path.isfile("/tmp/i-2021-06-28_1011-1.json")
+    
+    with open("/tmp/i-2021-06-28_1011-1.json", 'r') as file:
+        data = file.read()
+    obj = json.loads(data)
+    print("json content: " + str(obj))
