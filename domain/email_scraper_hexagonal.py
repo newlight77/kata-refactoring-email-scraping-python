@@ -43,7 +43,7 @@ class EmailScraperHexagonal:
         parsed_messages = self.parse_emails_body(parsed_messages)
         print('self.config', self.config)
         parsed_messages = self.parse_email_attachments(parsed_messages, self.config.attachment_dir)
-        self.summary_to_json_file(parsed_messages, self.config.attachment_dir)
+        return self.summary_to_json_file(parsed_messages, self.config.attachment_dir)
 
     def parse_emails(self, raw_emails_with_envelopes):
         logger.debug("parse emails with raw_emails_with_envelopes")
@@ -66,7 +66,7 @@ class EmailScraperHexagonal:
         return messages
 
     def parse_emails_body(self, parsed_messages):
-        logger.debug("parse emails body with parsed_messages")
+        logger.debug("parse emails body with parsed_messages %s", parsed_messages)
         messages = []
         for (uid, metadata, message) in parsed_messages:
             logger.debug(f"parsing email body for UID={uid}")
@@ -75,7 +75,7 @@ class EmailScraperHexagonal:
         return messages
 
     def parse_email_attachments(self, parsed_messages, attachment_dir):
-        logger.debug("parse emails attachments with parsed_messages")
+        logger.debug("parse emails attachments with parsed_messages %s", parsed_messages)
         messages = []
         for (uid, metadata, message) in parsed_messages:
             logger.debug(f"parsing email attachments for UID={uid}")
@@ -85,10 +85,11 @@ class EmailScraperHexagonal:
         return messages
 
     def summary_to_json_file(self, parsed_messages, dest_dir):
-        logger.info("write summary to json file with metadatas")
+        logger.info("write summary to json file with metadatas %s", parsed_messages)
         file_list = []
         for (uid, metadata, message) in parsed_messages:
             try:
+                logger.debug('metadata %s', metadata)
                 filename = f"{metadata['from']}-{metadata['date']}-{metadata['uid']}.json"
                 file_path = self.emailParser.to_json_file(metadata, filename, dest_dir)
                 file_list.append(file_path)

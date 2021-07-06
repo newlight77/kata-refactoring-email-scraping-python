@@ -54,14 +54,17 @@ class EmailScraperAdapter(EmailScraperPort):
 class EmailParserAdapter(EmailParserPort):
 
     def get_from(self, email_message):
+        logger.debug('email_message %s', email_message)
         from_raw = email_message.get_all('From', [])
+        logger.debug('from_raw %s', from_raw)
         from_list = email.utils.getaddresses(from_raw)
-
-        if len(from_list[0]) == 1:
-            return from_list[0][0]
-
-        if len(from_list[0]) == 2:
-            return from_list[0][1]
+        
+        logger.debug('from_list %s', from_list)
+        if len(from_list) > 0:
+            if len(from_list[0]) == 1:
+                return from_list[0][0]
+            if len(from_list[0]) == 2:
+                return from_list[0][1]
 
         return "UnknownEmail"
 
@@ -112,6 +115,7 @@ class EmailParserAdapter(EmailParserPort):
 
     def to_json_file(self, metadata, filename, dest_dir):
         logger.debug(f"trying to write json to file={filename} with uid={metadata['uid']}")
+        logger.debug('metadata %s', metadata)
         json_obj = json.dumps(metadata, indent=4)
         file_path = file_util.write_to_file(json_obj, filename, dest_dir)
         return file_path

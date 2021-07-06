@@ -14,11 +14,11 @@ def get_from(email_message):
     from_raw = email_message.get_all('From', [])
     from_list = email.utils.getaddresses(from_raw)
 
-    if len(from_list[0]) == 1:
-        return from_list[0][0]
-
-    if len(from_list[0]) == 2:
-        return from_list[0][1]
+    if len(from_list) > 0:
+        if len(from_list[0]) == 1:
+            return from_list[0][0]
+        if len(from_list[0]) == 2:
+            return from_list[0][1]
 
     return "UnknownEmail"
 
