@@ -61,7 +61,7 @@ def test_should_scrape_email_with_attachment_by_mocking_data_with_pipe_impl(scra
     # Assert
     assert os.path.isfile("/tmp/filename.pdf")
     assert os.path.isfile("/tmp/i-2021-06-28_1011-1.json")
-    
+
     with open("/tmp/i-2021-06-28_1011-1.json", 'r') as file:
         data = file.read()
     obj = json.loads(data)

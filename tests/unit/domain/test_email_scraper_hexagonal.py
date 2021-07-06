@@ -57,36 +57,19 @@ def test_should_scrape_email_with_attachment_by_mocking_data_with_pipe_impl(scra
     raw_emails_with_envelopes = []
     raw_emails_with_envelopes.append((1, message, envelope))
 
-    imap = Mock()
-    messages = {}
-    imap.search.return_value = messages
-
-    def items():
-        raw_message = {}
-        #raw_message[b'RFC822'] = message
-        raw_message[b'RFC822'] = Mock()
-        raw_message[b'RFC822'].decode.return_value = 'content'
-        #raw_message[b'ENVELOPE'] = envelope
-        raw_message[b'ENVELOPE'] = Mock()
-        raw_message[b'ENVELOPE'].decode.return_value = 'envelope'
-        raw_message[b'ENVELOPE'].date.strftime.return_value = '2021-06-28_1011'
-        return [(1, raw_message)]
-
-    imap.fetch.return_value = Mock(items=items)
-
-    client = EmailClientHexagonal(imap, scraper_config)
-    scraperAdapter = EmailScraperAdapter(client, scraper_config)
-    parserAdapter = EmailParserAdapter()
+    scraperAdapter = Mock()
+    parserAdapter = Mock()
     scraper = EmailScraperHexagonal(scraperAdapter, parserAdapter, scraper_config)
 
+    scraperAdapter.scrape.return_value = raw_emails_with_envelopes
+    parserAdapter.get_from.return_value = 'newlight77@gmail.com'
+    parserAdapter.get_subject.return_value = 'subject'
+    parserAdapter.parse_body.return_value = message
+    parserAdapter.save_attachments.return_value = ['filename.pdf']
+    parserAdapter.to_json_file.return_value = '/tmp/filename.pdf'
+
     # Act
-    scraper.scrape()
+    result = scraper.scrape()
 
     # Arrange
-    #assert os.path.isfile("/tmp/filename.pdf")
-    assert os.path.isfile("/tmp/UnknownEmail-2021-06-28_1011-1.json")
-    
-    with open("/tmp/UnknownEmail-2021-06-28_1011-1.json", 'r') as file:
-        data = file.read()
-    obj = json.loads(data)
-    print("json content: " + str(obj))
+    assert result == ['/tmp/filename.pdf']

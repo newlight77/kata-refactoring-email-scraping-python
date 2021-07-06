@@ -58,7 +58,7 @@ class EmailParserAdapter(EmailParserPort):
         from_raw = email_message.get_all('From', [])
         logger.debug('from_raw %s', from_raw)
         from_list = email.utils.getaddresses(from_raw)
-        
+
         logger.debug('from_list %s', from_list)
         if len(from_list) > 0:
             if len(from_list[0]) == 1:
