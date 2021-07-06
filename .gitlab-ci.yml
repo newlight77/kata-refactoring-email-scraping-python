@@ -1,11 +1,5 @@
 image: python:3.9
 
-cache:
-  paths:
-    - .pytest_cache/
-    - requirements.txt
-    - coverage.xml
-
 stages:
   - test
   - quality
@@ -28,6 +22,10 @@ ut:
     - PYTHONPATH=. pytest --cov-report xml --cov=app --cov=domain --cov=infrastructure --cov=shared ./tests/unit ./tests/component -v -s
     # need to correct paths to source files
     - coverage xml -i # https://stackoverflow.com/questions/12844451/test-test-coverage-with-python-in-sonar-not-showing-up
+  cache:
+    paths:
+      - .pytest_cache/
+      - coverage.xml
   tags:
     - node
 
@@ -41,6 +39,8 @@ lint:
     - pip install -r requirements.dev.txt
   script: 
     - ./tools/linter/lint.sh
+  dependencies:
+    - ut
   tags:
     - node
 
@@ -69,6 +69,10 @@ code-analysis:
     - gitlab-sonar-scanner
   dependencies:
     - ut
+  cache:
+    paths:
+      - .pytest_cache/
+      - coverage.xml
   when: on_success
   tags:
     - node
