@@ -53,10 +53,10 @@ dc-push:
 dc-up:
 	@docker-compose up -d
 
-unit-test:
+test-unit:
 	@PYTHONPATH=. pytest -v -s -k unit
 
-component-test:
+test-component:
 	@PYTHONPATH=. pytest -v -s -k component
 
 all-test:
