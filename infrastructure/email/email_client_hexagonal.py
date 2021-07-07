@@ -1,13 +1,13 @@
 import email
 from imapclient import IMAPClient
-from email.header import decode_header
 import html2text
 import json
 import os
 import urllib.parse
-from domain.email_scraper_hexagonal import EmailParserPort, EmailScraperPort
 from shared.file_util import file_util
+from domain.email_scraper_hexagonal import EmailParserPort, EmailScraperPort
 from config import logger, config
+from email.header import decode_header
 
 logger = logger.logger(__name__, config.LOG_LEVEL)
 
@@ -38,28 +38,12 @@ class EmailClientHexagonal:
         return raw_emails_with_envelopes
 
 
-class EmailScraperAdapter(EmailScraperPort):
-    # pylint: disable=too-many-arguments
-    def __init__(self, emailClient: EmailClientHexagonal, config):
-        self.client = emailClient
-        self.config = config
-
-    def connect(self):
-        return self.client.connect()
-
-    def scrape(self):
-        return self.client.fetch_emails()
-
-
-class EmailParserAdapter(EmailParserPort):
-
+class EmailParser:
+    
     def get_from(self, email_message):
-        logger.debug('email_message %s', email_message)
         from_raw = email_message.get_all('From', [])
-        logger.debug('from_raw %s', from_raw)
         from_list = email.utils.getaddresses(from_raw)
 
-        logger.debug('from_list %s', from_list)
         if len(from_list) > 0:
             if len(from_list[0]) == 1:
                 return from_list[0][0]
@@ -68,6 +52,7 @@ class EmailParserAdapter(EmailParserPort):
 
         return "UnknownEmail"
 
+
     def get_subject(self, email_message):
         subject = email_message.get("Subject")
         if subject is None:
@@ -75,6 +60,7 @@ class EmailParserAdapter(EmailParserPort):
 
         subject, encoding = decode_header(str(subject))[0]
         return str(subject).strip()
+
 
     def parse_body(self, message):
         email_body = {}
@@ -99,7 +85,7 @@ class EmailParserAdapter(EmailParserPort):
         email_attachments = []
         if message.is_multipart():
             for part in message.walk():
-                file_path = self.save_attachment(part, dest_dir)
+                file_path = save_attachment(part, dest_dir)
                 email_attachments.append(file_path)
         return email_attachments
 
@@ -115,7 +101,44 @@ class EmailParserAdapter(EmailParserPort):
 
     def to_json_file(self, metadata, filename, dest_dir):
         logger.debug(f"trying to write json to file={filename} with uid={metadata['uid']}")
-        logger.debug('metadata %s', metadata)
         json_obj = json.dumps(metadata, indent=4)
         file_path = file_util.write_to_file(json_obj, filename, dest_dir)
         return file_path
+
+
+class EmailScraperAdapter(EmailScraperPort):
+    # pylint: disable=too-many-arguments
+    def __init__(self, emailClient: EmailClientHexagonal, config):
+        self.client = emailClient
+        self.config = config
+
+    def connect(self):
+        return self.client.connect()
+
+    def scrape(self):
+        return self.client.fetch_emails()
+
+
+class EmailParserAdapter(EmailParserPort):
+    def __init__(self, parser: EmailParser):
+        self.parser = parser
+
+    def get_from(self, email_message):
+        return self.parser.get_from(email_message)
+
+    def get_subject(self, email_message):
+        return self.parser.get_subject(email_message)
+
+    def parse_body(self, message):
+        return self.parser.parse_body(message)
+
+    def save_attachments(self, message, dest_dir):
+        email_attachments = []
+        if message.is_multipart():
+            for part in message.walk():
+                file_path = self.parser.save_attachment(part, dest_dir)
+                email_attachments.append(file_path)
+        return email_attachments
+
+    def to_json_file(self, metadata, filename, dest_dir):
+        return self.parser.to_json_file(metadata, filename, dest_dir)

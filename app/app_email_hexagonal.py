@@ -1,7 +1,7 @@
 from imapclient import IMAPClient
 from config import config
 from domain.email_scraper_hexagonal import EmailScraperHexagonal
-from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter, EmailParserAdapter
+from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter, EmailParserAdapter, EmailParser
 from shared.collections_util import dict_util
 from config import logger
 
@@ -37,7 +37,8 @@ def run():
     client = client.connect()
 
     scraperAdapter = EmailScraperAdapter(client, scraper_config)
-    parserAdapter = EmailParserAdapter()
+    parser = EmailParser()
+    parserAdapter = EmailParserAdapter(parser)
     scraper = EmailScraperHexagonal(scraperAdapter, parserAdapter, scraper_config)
     handler = EmailScrapeHandler(scraper, scraper_config)
 

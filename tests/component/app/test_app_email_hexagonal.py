@@ -1,7 +1,7 @@
 from shared.collections_util import dict_util
 from app.app_email_hexagonal import EmailScrapeHandler
 from domain.email_scraper_hexagonal import EmailScraperHexagonal
-from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter, EmailParserAdapter
+from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter, EmailParserAdapter, EmailParser
 from app.app_email_hexagonal import listen
 from imapclient import IMAPClient
 import pytest
@@ -71,7 +71,8 @@ def test_should_hexagonal_start_listening_with_no_data(imap, scraper_config):
     imap.idle = idle
 
     scraperAdapter = EmailScraperAdapter(client, scraper_config)
-    parserAdapter = EmailParserAdapter()
+    parser = EmailParser()
+    parserAdapter = EmailParserAdapter(parser)
     scraper = EmailScraperHexagonal(scraperAdapter, parserAdapter, scraper_config)
     handler = EmailScrapeHandler(scraper, scraper_config)
 
