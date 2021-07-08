@@ -47,7 +47,7 @@ def test_should_scrape_email_with_attachment_by_mocking_data_with_pipe_impl(scra
 
     message = Mock()
     message.walk.return_value = [part1, part2]
-    message.get_all.return_value = "ipaddresss"
+    message.get_all.return_value = ["Kong <newlight77@gmail.com>"]
     message.get.return_value = "subject"
     message.is_multipart.return_value = True
 

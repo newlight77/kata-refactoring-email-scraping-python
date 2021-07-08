@@ -1,4 +1,5 @@
 import email
+from email import utils as email_utils
 from imapclient import IMAPClient
 import html2text
 import json
@@ -39,10 +40,10 @@ class EmailClientHexagonal:
 
 
 class EmailParser:
-    
+
     def get_from(self, email_message):
         from_raw = email_message.get_all('From', [])
-        from_list = email.utils.getaddresses(from_raw)
+        from_list = email_utils.getaddresses(from_raw)
 
         if len(from_list) > 0:
             if len(from_list[0]) == 1:
@@ -52,7 +53,6 @@ class EmailParser:
 
         return "UnknownEmail"
 
-
     def get_subject(self, email_message):
         subject = email_message.get("Subject")
         if subject is None:
@@ -60,7 +60,6 @@ class EmailParser:
 
         subject, encoding = decode_header(str(subject))[0]
         return str(subject).strip()
-
 
     def parse_body(self, message):
         email_body = {}
@@ -85,8 +84,9 @@ class EmailParser:
         email_attachments = []
         if message.is_multipart():
             for part in message.walk():
-                file_path = save_attachment(part, dest_dir)
-                email_attachments.append(file_path)
+                file_path = self.save_attachment(part, dest_dir)
+                if file_path is not None:
+                    email_attachments.append(file_path)
         return email_attachments
 
     def save_attachment(self, part, dest_dir):
