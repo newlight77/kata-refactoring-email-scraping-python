@@ -13,6 +13,7 @@ logger = logger.logger(__name__, config.LOG_LEVEL)
 def get_from(email_message):
     from_raw = email_message.get_all('From', [])
     from_list = email.utils.getaddresses(from_raw)
+    logger.debug("from_list=%s", from_list)
 
     if len(from_list) > 0:
         if len(from_list[0]) == 1:
@@ -56,10 +57,12 @@ def save_attachments(message, dest_dir):
     if message.is_multipart():
         for part in message.walk():
             file_path = save_attachment(part, dest_dir)
-            email_attachments.append(file_path)
+            if file_path is not None:
+                email_attachments.append(file_path)
     return email_attachments
 
 def save_attachment(part, dest_dir):
+    logger.error("save_attachement with file %s", part.get_filename())
     if bool(part.get_filename()):
         file_path = os.path.join(dest_dir, part.get_filename())
         file_path = urllib.parse.unquote(file_path)

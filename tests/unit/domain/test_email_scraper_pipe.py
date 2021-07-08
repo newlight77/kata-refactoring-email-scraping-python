@@ -29,8 +29,8 @@ def run_before_and_after_tests():
     # Teardown
     if(os.path.isfile("/tmp/filename.pdf")):
         os.remove("/tmp/filename.pdf")
-    if(os.path.isfile("/tmp/i-2021-06-28_1011-1.json")):
-        os.remove("/tmp/i-2021-06-28_1011-1.json")
+    if(os.path.isfile("/tmp/newlight77@gmail.com-2021-06-28_1011-1.json")):
+        os.remove("/tmp/newlight77@gmail.com-2021-06-28_1011-1.json")
 
 
 def test_should_scrape_email_with_attachment_by_mocking_data_with_pipe_impl(scraper_config):
@@ -45,7 +45,7 @@ def test_should_scrape_email_with_attachment_by_mocking_data_with_pipe_impl(scra
 
     message = Mock()
     message.walk.return_value = [part1, part2]
-    message.get_all.return_value = "ipaddresss"
+    message.get_all.return_value = ["Kong <newlight77@gmail.com>"]
     message.get.return_value = "subject"
     message.is_multipart.return_value = True
 
@@ -60,9 +60,18 @@ def test_should_scrape_email_with_attachment_by_mocking_data_with_pipe_impl(scra
 
     # Assert
     assert os.path.isfile("/tmp/filename.pdf")
-    assert os.path.isfile("/tmp/i-2021-06-28_1011-1.json")
+    assert os.path.isfile("/tmp/newlight77@gmail.com-2021-06-28_1011-1.json")
 
-    with open("/tmp/i-2021-06-28_1011-1.json", 'r') as file:
+    with open("/tmp/newlight77@gmail.com-2021-06-28_1011-1.json", 'r') as file:
         data = file.read()
     obj = json.loads(data)
     print("json content: " + str(obj))
+
+    assert obj == {
+        'uid': 1,
+        'from': 'newlight77@gmail.com',
+        'subject': 'subject',
+        'date': '2021-06-28_1011',
+        'body': {'Plain_Text': 'email content'},
+        'attachments': ['/tmp/filename.pdf']
+    }
