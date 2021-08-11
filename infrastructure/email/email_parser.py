@@ -1,9 +1,10 @@
 import email
-from email.header import decode_header
 import html2text
 import json
 import os
 import urllib.parse
+from email.header import decode_header
+from shared.json_util.json_util import DateTimeEncoder
 from shared.file_util import file_util
 from config import logger, config
 
@@ -62,7 +63,7 @@ def save_attachments(message, dest_dir):
     return email_attachments
 
 def save_attachment(part, dest_dir):
-    logger.error("save_attachement with file %s", part.get_filename())
+    logger.info("save_attachement with file %s", part.get_filename())
     if bool(part.get_filename()):
         file_path = os.path.join(dest_dir, part.get_filename())
         file_path = urllib.parse.unquote(file_path)
@@ -74,6 +75,6 @@ def save_attachment(part, dest_dir):
 
 def to_json_file(metadata, filename, dest_dir):
     logger.debug(f"trying to write json to file={filename} with uid={metadata['uid']}")
-    json_obj = json.dumps(metadata, indent=4)
+    json_obj = json.dumps(metadata, indent=4, cls=DateTimeEncoder)
     file_path = file_util.write_to_file(json_obj, filename, dest_dir)
     return file_path

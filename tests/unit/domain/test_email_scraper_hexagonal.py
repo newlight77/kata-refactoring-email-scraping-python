@@ -4,7 +4,7 @@ import os
 import json
 import datetime
 from unittest.mock import Mock
-from domain.email_scraper_hexagonal import EmailScraperHexagonal, EmailScraperPort, EmailParserPort
+from domain.email_scraper_hexagonal import EmailScraperHexagonal, EmailScraperPort, EmailParserPort, FetchedEmail
 from shared.collections_util import dict_util
 
 @pytest.fixture
@@ -55,18 +55,19 @@ def test_should_scrape_email_with_attachment_by_mocking_data_with_pipe_impl(scra
     envelope.date.strftime.return_value = '2021-06-28_1011'
 
     raw_emails_with_envelopes = []
-    raw_emails_with_envelopes.append((1, message, envelope))
+    fetched_email = FetchedEmail(1, message, envelope, datetime.datetime.now())
+    raw_emails_with_envelopes.append(fetched_email)
 
-    scraperAdapter = Mock()
-    parserAdapter = Mock()
-    scraper = EmailScraperHexagonal(scraperAdapter, parserAdapter, scraper_config)
+    scraper_adapter = Mock()
+    parser_adapter = Mock()
+    scraper = EmailScraperHexagonal(scraper_adapter, parser_adapter, scraper_config)
 
-    scraperAdapter.scrape.return_value = raw_emails_with_envelopes
-    parserAdapter.get_from.return_value = 'newlight77@gmail.com'
-    parserAdapter.get_subject.return_value = 'subject'
-    parserAdapter.parse_body.return_value = message
-    parserAdapter.save_attachments.return_value = ['filename.pdf']
-    parserAdapter.to_json_file.return_value = '/tmp/filename.pdf'
+    scraper_adapter.fetch_emails.return_value = raw_emails_with_envelopes
+    parser_adapter.get_from.return_value = 'newlight77@gmail.com'
+    parser_adapter.get_subject.return_value = 'subject'
+    parser_adapter.parse_body.return_value = message
+    parser_adapter.save_attachments.return_value = ['filename.pdf']
+    parser_adapter.to_json_file.return_value = '/tmp/filename.pdf'
 
     # Act
     result = scraper.scrape()

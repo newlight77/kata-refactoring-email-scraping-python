@@ -7,5 +7,5 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     logger.info(f"running the email scraper on {config.env}")
     # app_email_listener.run()
-    # app_email_hexagonal.run()
-    app_email_pipe.run()
+    app_email_hexagonal.run()
+    # app_email_pipe.run()

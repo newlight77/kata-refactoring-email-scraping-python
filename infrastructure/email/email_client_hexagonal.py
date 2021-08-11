@@ -1,12 +1,13 @@
 import email
-from email import utils as email_utils
 from imapclient import IMAPClient
 import html2text
 import json
 import os
 import urllib.parse
+from email import utils as email_utils
+from shared.json_util.json_util import DateTimeEncoder
 from shared.file_util import file_util
-from domain.email_scraper_hexagonal import EmailParserPort, EmailScraperPort
+from domain.email_scraper_hexagonal import FetchedEmail, EmailParserPort, EmailScraperPort
 from config import logger, config
 from email.header import decode_header
 
@@ -30,13 +31,15 @@ class EmailClientHexagonal:
         raw_envelopes = self.imap.fetch(messages, ['ENVELOPE']).items()
         raw_emails = self.imap.fetch(messages, 'RFC822').items()
 
-        raw_emails_with_envelopes = []
+        emails_with_envelopes = []
         for (uid, raw_message), (uid, raw_envelop) in zip(raw_emails, raw_envelopes):
             logger.info(f"fetch emails: yield UID={uid}")
             message = email.message_from_bytes(raw_message[b'RFC822'])
             envelop = raw_envelop[b'ENVELOPE']
-            raw_emails_with_envelopes.append((uid, message, envelop))
-        return raw_emails_with_envelopes
+            date = envelop.date.strftime('%Y%m%d_%H%M')
+            emails_with_envelopes.append(FetchedEmail(uid, message, envelop, date))
+
+        return emails_with_envelopes
 
 
 class EmailParser:
@@ -101,21 +104,21 @@ class EmailParser:
 
     def to_json_file(self, metadata, filename, dest_dir):
         logger.debug(f"trying to write json to file={filename} with uid={metadata['uid']}")
-        json_obj = json.dumps(metadata, indent=4)
+        json_obj = json.dumps(metadata, indent=4, cls=DateTimeEncoder)
         file_path = file_util.write_to_file(json_obj, filename, dest_dir)
         return file_path
 
 
 class EmailScraperAdapter(EmailScraperPort):
     # pylint: disable=too-many-arguments
-    def __init__(self, emailClient: EmailClientHexagonal, config):
-        self.client = emailClient
+    def __init__(self, email_client: EmailClientHexagonal, config):
+        self.client = email_client
         self.config = config
 
     def connect(self):
         return self.client.connect()
 
-    def scrape(self):
+    def fetch_emails(self):
         return self.client.fetch_emails()
 
 

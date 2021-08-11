@@ -1,23 +1,12 @@
 from imapclient import IMAPClient
 from config import config
 from domain.email_scraper_hexagonal import EmailScraperHexagonal
+from domain.email_scraper_uc_hexagonal import EmailScraperUseCaseHexagonal
 from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter, EmailParserAdapter, EmailParser
 from shared.collections_util import dict_util
 from config import logger
 
 logger = logger.logger(__name__, config.LOG_LEVEL)
-
-class EmailScrapeHandler():
-    def __init__(self, scraper: EmailScraperHexagonal, config):
-        self.scraper = scraper
-        self.config = config
-
-    def connect(self):
-        return self.scraper.connect()
-
-    def scrape(self):
-        return self.scraper.scrape()
-
 
 def run():
     # pylint: disable=no-member
@@ -36,16 +25,16 @@ def run():
     client = EmailClientHexagonal(imap, scraper_config)
     client = client.connect()
 
-    scraperAdapter = EmailScraperAdapter(client, scraper_config)
+    scraper_adapter = EmailScraperAdapter(client, scraper_config)
     parser = EmailParser()
-    parserAdapter = EmailParserAdapter(parser)
-    scraper = EmailScraperHexagonal(scraperAdapter, parserAdapter, scraper_config)
-    handler = EmailScrapeHandler(scraper, scraper_config)
+    parser_adapter = EmailParserAdapter(parser)
+    scraper = EmailScraperHexagonal(scraper_adapter, parser_adapter, scraper_config)
+    usecase = EmailScraperUseCaseHexagonal(scraper_config, scraper)
 
-    listen(client, handler, scraper_config)
+    listen(client, usecase, scraper_config)
 
 
-def listen(client: EmailClientHexagonal, handler: EmailScrapeHandler, config):
+def listen(client: EmailClientHexagonal, handler: EmailScraperUseCaseHexagonal, config):
     imap = client.imap
 
     # if type(imap) is not IMAPClient:
