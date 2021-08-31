@@ -1,3 +1,4 @@
+from shared.json_util.json_util import to_json_file
 from infrastructure.email import email_parser
 from shared.decorators.pipe import Pipe
 from config import logger, config
@@ -61,7 +62,7 @@ def summary_to_json_file(parsed_messages, dest_dir):
     for (uid, metadata, message) in parsed_messages:
         try:
             filename = f"{metadata['from']}-{metadata['date']}-{metadata['uid']}.json"
-            file_path = email_parser.to_json_file(metadata, filename, dest_dir)
+            file_path = to_json_file(metadata, filename, dest_dir)
             file_list.append(file_path)
         except ValueError:
             logger.error(f"an error occured while dumping metadata into json for message uid={metadata['uid']}")

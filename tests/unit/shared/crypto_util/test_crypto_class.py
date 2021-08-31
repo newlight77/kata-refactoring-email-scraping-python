@@ -17,6 +17,7 @@ def run_before_and_after_tests():
     if(os.path.isfile("config/crypto_secret.key.encrypted.decrypted")):
         os.remove("config/crypto_secret.key.encrypted.decrypted")
 
+@pytest.mark.shared
 def test_encrypt_message_using_class():
     # Arrange :
     crypto = Crypto(secretFile="config/crypto_secret.key")
@@ -30,6 +31,7 @@ def test_encrypt_message_using_class():
     assert decrypted == message
     # assert re.match(r"^\w+", encrypted)
 
+@pytest.mark.shared
 def test_encrypt_file_using_class():
     # Arrange :
     crypto = Crypto(secretFile="config/crypto_secret.key")
@@ -40,6 +42,7 @@ def test_encrypt_file_using_class():
     # Assert :
     assert os.path.isfile("config/crypto_secret.key.encrypted")
 
+@pytest.mark.shared
 def test_decrypt_file_using_class():
     # Arrange :
     crypto = Crypto(secretFile="config/crypto_secret.key")

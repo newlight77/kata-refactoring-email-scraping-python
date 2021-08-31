@@ -24,6 +24,24 @@ lint:
 test:
 	@PYTHONPATH=. pytest -v -s
 
+test-key:
+	@PYTHONPATH=. pytest -v -s -k $(key)
+
+test-unit:
+	@PYTHONPATH=. pytest -v -s -k unit
+
+test-component:
+	@PYTHONPATH=. pytest -v -s -k component
+
+test-hexagonal:
+	@PYTHONPATH=. pytest -v -s -m "hexagonal"
+
+test-pipe:
+	@PYTHONPATH=. pytest -v -s -m "pipe"
+
+test-shared:
+	@PYTHONPATH=. pytest -v -s -m "shared"
+
 run:
 	@python app.py
 
@@ -52,12 +70,3 @@ dc-push:
 
 dc-up:
 	@docker-compose up -d
-
-test-unit:
-	@PYTHONPATH=. pytest -v -s -k unit
-
-test-component:
-	@PYTHONPATH=. pytest -v -s -k component
-
-all-test:
-	@PYTHONPATH=. pytest -v -s

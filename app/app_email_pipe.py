@@ -55,7 +55,7 @@ def listen(client: EmailClientPipe, config):
     except ValueError as ve:
         logger.error(f"error: {ve}")
     except KeyboardInterrupt as ki:
-        logger.error(f"error: {ki}")
+        logger.warning(f"error KeyboardInterrupt: {ki}")
     finally:
         logger.info("terminating the app")
         imap.idle_done()

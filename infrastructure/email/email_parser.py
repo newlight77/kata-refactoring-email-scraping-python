@@ -1,10 +1,6 @@
 import email
 import html2text
-import json
-import os
-import urllib.parse
 from email.header import decode_header
-from shared.json_util.json_util import DateTimeEncoder
 from shared.file_util import file_util
 from config import logger, config
 
@@ -24,7 +20,6 @@ def get_from(email_message):
 
     return "UnknownEmail"
 
-
 def get_subject(email_message):
     subject = email_message.get("Subject")
     if subject is None:
@@ -32,7 +27,6 @@ def get_subject(email_message):
 
     subject, encoding = decode_header(str(subject))[0]
     return str(subject).strip()
-
 
 def parse_body(message):
     email_body = {}
@@ -57,24 +51,11 @@ def save_attachments(message, dest_dir):
     email_attachments = []
     if message.is_multipart():
         for part in message.walk():
-            file_path = save_attachment(part, dest_dir)
-            if file_path is not None:
-                email_attachments.append(file_path)
+            logger.info("save_attachement with file %s", part.get_filename())
+            if bool(part.get_filename()):
+                file_path = file_util.write_to_file(part.get_payload(decode=True), part.get_filename(), dest_dir)
+                logger.debug(f"saved cv to file {file_path}")
+                if file_path is not None:
+                    email_attachments.append(file_path)
+
     return email_attachments
-
-def save_attachment(part, dest_dir):
-    logger.info("save_attachement with file %s", part.get_filename())
-    if bool(part.get_filename()):
-        file_path = os.path.join(dest_dir, part.get_filename())
-        file_path = urllib.parse.unquote(file_path)
-        logger.debug(f"saving cv to file {file_path}")
-        with open(file_path, 'wb') as file:
-            file.write(part.get_payload(decode=True))
-
-        return str(file_path)
-
-def to_json_file(metadata, filename, dest_dir):
-    logger.debug(f"trying to write json to file={filename} with uid={metadata['uid']}")
-    json_obj = json.dumps(metadata, indent=4, cls=DateTimeEncoder)
-    file_path = file_util.write_to_file(json_obj, filename, dest_dir)
-    return file_path

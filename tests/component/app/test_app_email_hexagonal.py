@@ -1,9 +1,8 @@
 from shared.collections_util import dict_util
 from domain.email_scraper_uc_hexagonal import EmailScraperUseCaseHexagonal
 from domain.email_scraper_hexagonal import EmailScraperHexagonal
-from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter, EmailParserAdapter, EmailParser
+from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter, EmailParserAdapter
 from app.app_email_hexagonal import listen
-from imapclient import IMAPClient
 import pytest
 from unittest.mock import Mock
 
@@ -30,6 +29,7 @@ def email_client_hexagonal(imap, scraper_config):
     return EmailClientHexagonal(imap, scraper_config)
 
 
+@pytest.mark.hexagonal
 def test_should_connect_imap_hexagonal(scraper_config):
     # Arrange
     client = EmailClientHexagonal(Mock(), scraper_config)
@@ -38,10 +38,10 @@ def test_should_connect_imap_hexagonal(scraper_config):
     client = client.connect()
 
     # Assert
-    #assert client.imap.login is None
     client.imap.login.assert_called_once_with('test@example.com', 'test-password')
 
 
+@pytest.mark.hexagonal
 def test_should_hexagonal_start_listening_with_no_data(imap, scraper_config):
     # Arrange
     # pylint: disable=no-member
@@ -50,7 +50,6 @@ def test_should_hexagonal_start_listening_with_no_data(imap, scraper_config):
 
     message = {}
     message[b'RFC822'] = bytes('email2', 'utf-8')
-    #items = {'11': [(1, message)]}
 
     messages = {}
     imap.search.return_value = messages
@@ -71,8 +70,7 @@ def test_should_hexagonal_start_listening_with_no_data(imap, scraper_config):
     imap.idle = idle
 
     scraper_adapter = EmailScraperAdapter(client, scraper_config)
-    parser = EmailParser()
-    parser_adapter = EmailParserAdapter(parser)
+    parser_adapter = EmailParserAdapter()
     scraper = EmailScraperHexagonal(scraper_adapter, parser_adapter, scraper_config)
     usecase = EmailScraperUseCaseHexagonal(scraper_config, scraper)
 

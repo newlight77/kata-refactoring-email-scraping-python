@@ -1,5 +1,7 @@
+import pytest
 from shared.collections_util.dict_util import DefDictToObject
 
+@pytest.mark.shared
 def test_encrypt_message():
     # Arrange :
     data = {

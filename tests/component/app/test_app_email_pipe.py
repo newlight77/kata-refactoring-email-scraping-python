@@ -29,6 +29,7 @@ def email_client_pipe(imap, scraper_config):
     return EmailClientPipe(imap, scraper_config)
 
 
+@pytest.mark.pipe
 def test_should_connect_imap_pipe(scraper_config):
     # Arrange
     client = EmailClientPipe(Mock(), scraper_config)
@@ -37,10 +38,10 @@ def test_should_connect_imap_pipe(scraper_config):
     client = client.connect()
 
     # Assert
-    #assert client.imap.login is None
     client.imap.login.assert_called_once_with('test@example.com', 'test-password')
 
 
+@pytest.mark.pipe
 def test_should_pipe_start_listening_with_no_data(imap, scraper_config):
     # Arrange
     # pylint: disable=no-member
@@ -49,7 +50,6 @@ def test_should_pipe_start_listening_with_no_data(imap, scraper_config):
 
     message = {}
     message[b'RFC822'] = bytes('email2', 'utf-8')
-    #items = {'11': [(1, message)]}
 
     messages = {}
     imap.search.return_value = messages

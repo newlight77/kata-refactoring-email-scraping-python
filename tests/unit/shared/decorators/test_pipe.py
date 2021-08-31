@@ -1,6 +1,8 @@
+import pytest
 from shared.decorators.pipe import pipe, Pipe
 
 
+@pytest.mark.shared
 def test_should_pipe_functions_using_rrshift():
 
     # Arrange
@@ -23,6 +25,7 @@ def test_should_pipe_functions_using_rrshift():
     assert result == [1, 2, 3, 4, 4, 4, 3, 2, 1, 3]
 
 
+@pytest.mark.shared
 def test_should_pipe_functions_using_ror():
 
     # Arrange

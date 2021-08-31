@@ -1,15 +1,8 @@
+from domain.fetched_email import FetchedEmail
+from shared.json_util.json_util import to_json_file
 from config import logger, config
 
 logger = logger.logger(__name__, config.LOG_LEVEL)
-
-
-class FetchedEmail:
-    def __init__(self, uid, message, envelop, date):
-        self.uid = uid
-        self.message = message
-        self.envelop = envelop
-        self.date = date
-        self.metadata = None
 
 
 class EmailScraperPort:
@@ -94,7 +87,7 @@ class EmailScraperHexagonal:
             try:
                 logger.debug('metadata %s', email.metadata)
                 filename = f"{email.metadata['from']}-{email.metadata['date']}-{email.metadata['uid']}.json"
-                file_path = self.email_parser.to_json_file(email.metadata, filename, dest_dir)
+                file_path = to_json_file(email.metadata, filename, dest_dir)
                 file_list.append(file_path)
             except ValueError as error:
                 logger.error(f"an error occured while dumping metadata into json for message uid={email.metadata['uid']} with error={error}")

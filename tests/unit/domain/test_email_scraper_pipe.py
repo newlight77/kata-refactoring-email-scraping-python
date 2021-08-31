@@ -33,6 +33,7 @@ def run_before_and_after_tests():
         os.remove("/tmp/newlight77@gmail.com-2021-06-28_1011-1.json")
 
 
+@pytest.mark.pipe
 def test_should_scrape_email_with_attachment_by_mocking_data_with_pipe_impl(scraper_config):
     # Arrange
     part1 = Mock()

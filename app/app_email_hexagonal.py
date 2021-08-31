@@ -2,7 +2,7 @@ from imapclient import IMAPClient
 from config import config
 from domain.email_scraper_hexagonal import EmailScraperHexagonal
 from domain.email_scraper_uc_hexagonal import EmailScraperUseCaseHexagonal
-from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter, EmailParserAdapter, EmailParser
+from infrastructure.email.email_client_hexagonal import EmailClientHexagonal, EmailScraperAdapter, EmailParserAdapter
 from shared.collections_util import dict_util
 from config import logger
 
@@ -26,8 +26,7 @@ def run():
     client = client.connect()
 
     scraper_adapter = EmailScraperAdapter(client, scraper_config)
-    parser = EmailParser()
-    parser_adapter = EmailParserAdapter(parser)
+    parser_adapter = EmailParserAdapter()
     scraper = EmailScraperHexagonal(scraper_adapter, parser_adapter, scraper_config)
     usecase = EmailScraperUseCaseHexagonal(scraper_config, scraper)
 
@@ -59,7 +58,7 @@ def listen(client: EmailClientHexagonal, handler: EmailScraperUseCaseHexagonal, 
     except ValueError as ve:
         logger.error(f"error: {ve}")
     except KeyboardInterrupt as ki:
-        logger.error(f"error: {ki}")
+        logger.warning(f"error KeyboardInterrupt: {ki}")
     finally:
         logger.info("terminating the app")
         imap.idle_done()
