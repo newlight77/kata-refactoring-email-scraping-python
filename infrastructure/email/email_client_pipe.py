@@ -1,3 +1,4 @@
+from domain.fetched_email import FetchedEmail
 import email
 from imapclient import IMAPClient
 from config import logger, config
@@ -20,10 +21,13 @@ class EmailClientPipe():
         messages = self.imap.search(self.config.search_key_words)
         raw_envelopes = self.imap.fetch(messages, ['ENVELOPE']).items()
         raw_emails = self.imap.fetch(messages, 'RFC822').items()
-        raw_emails_with_envelopes = []
+
+        emails_with_envelopes = []
         for (uid, raw_message), (uid, raw_envelop) in zip(raw_emails, raw_envelopes):
             logger.info(f"fetch emails: yield UID={uid}")
             message = email.message_from_bytes(raw_message[b'RFC822'])
             envelop = raw_envelop[b'ENVELOPE']
-            raw_emails_with_envelopes.append((uid, message, envelop))
-        return raw_emails_with_envelopes
+            date = envelop.date#.strftime('%Y%m%d_%H%M')
+            emails_with_envelopes.append(FetchedEmail(uid, message, envelop, date))
+
+        return emails_with_envelopes
