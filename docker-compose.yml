@@ -7,7 +7,7 @@ version: "3.6"
 services:
 
   app-cv-backend:
-    image: registry.gitlab.com/tricefal/app-cv-backend:${VERSION}
+    image: registry.gitlab.com/oneprofile/app-cv-backend:${VERSION}
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -40,4 +40,3 @@ networks:
 volumes:  
   app_files:
   app_logs:
-  

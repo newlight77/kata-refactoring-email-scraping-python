@@ -55,10 +55,6 @@ run-dev:
 	
 	@ENV=dev python app.py
 
-# make test-api testId=test4
-test-api:
-	@./test-api.sh --api-url=http://localhost:5000/cv/api --client-id=dev.frontend.http.localhost-4200 --token-url=https://dev.tricefal.io/auth/realms/dev.app/protocol/openid-connect/token --username=newlight77+${testId}@gmail.com
-
 dc-build:
 	@docker build . -t app-cv-backend:dev --build-arg ENV=$(ENV)
 
