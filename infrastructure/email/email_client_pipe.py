@@ -27,7 +27,7 @@ class EmailClientPipe():
             logger.info(f"fetch emails: yield UID={uid}")
             message = email.message_from_bytes(raw_message[b'RFC822'])
             envelop = raw_envelop[b'ENVELOPE']
-            date = envelop.date#.strftime('%Y%m%d_%H%M')
+            date = envelop.date  # .strftime('%Y%m%d_%H%M')
             emails_with_envelopes.append(FetchedEmail(uid, message, envelop, date))
 
         return emails_with_envelopes

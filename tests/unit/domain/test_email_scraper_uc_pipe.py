@@ -45,7 +45,7 @@ def test_should_scrape_email_with_attachment_by_mocking_data_with_pipe_impl(scra
     part1.get_payload.return_value = 'email content'
     part1.get_filename.return_value = None
     part2 = Mock()
-    part2.get_payload.return_value = 'email content'#.encode('utf-8')
+    part2.get_payload.return_value = 'email content'  # .encode('utf-8')
     part2.get_filename.return_value = '/tmp/filename.pdf'
 
     message = Mock()

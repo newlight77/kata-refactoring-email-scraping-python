@@ -20,7 +20,7 @@ def parse_emails(emails_with_envelopes):
     emails_with_metadata = []
     for email in emails_with_envelopes:
         if type(email) == FetchedEmail:
-            date = email.envelop.date#.strftime('%Y%m%d_%H%M')
+            date = email.envelop.date  # .strftime('%Y%m%d_%H%M')
 
             email_from = email_parser.get_from(email.message)
             email_subject = email_parser.get_subject(email.message).strip()

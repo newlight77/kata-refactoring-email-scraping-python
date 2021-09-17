@@ -71,7 +71,7 @@ def test_should_save_attachment_from_message_with_hexagonal():
     part1.get_payload.return_value = 'email content'
     part1.get_filename.return_value = None
     part2 = Mock()
-    part2.get_payload.return_value = 'email content'#.encode('utf-8')
+    part2.get_payload.return_value = 'email content'  # .encode('utf-8')
     part2.get_filename.return_value = 'filename.pdf'
 
     message = Mock()
