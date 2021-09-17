@@ -91,8 +91,10 @@ build-image:
     ENV: local
     ENABLE_BUILD: 'true'
     GROUP_REGISTRY: registry.gitlab.com/oneprofile/
-    GROUP_REGISTRY_USER: oneprofile-read
-    # GROUP_REGISTRY_PASSWORD: on gitlab.com project/settings/cicd/variables
+    # need to create a deploy token at https://gitlab.com/groups/oneprofile/-/settings/repository
+    GROUP_REGISTRY_USER: gitlab+deploy-token-578015
+    # GROUP_REGISTRY_PASSWORD: to be set on gitlab.com project/settings/cicd/variables 
+    # ex : https://gitlab.com/oneprofile/app-signup-backend/-/settings/ci_cd
   before_script:
     - apk add --no-cache make git
     - apk add --no-cache docker-compose
